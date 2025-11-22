@@ -4,29 +4,29 @@ struct ProfileView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var appState: AppStateViewModel
     @State private var showSettings = false
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // Profile Header
                         if let user = authManager.currentUser {
                             ProfileHeader(user: user, creditScore: appState.state.creditScore)
                         }
-                        
+
                         // Stats Section
                         StatsSection(state: appState.state)
-                        
+
                         // Achievements
                         AchievementsSection()
-                        
+
                         // Settings
                         SettingsSection(showSettings: $showSettings)
-                        
+
                         // Logout
                         Button(action: {
                             authManager.signOut()
@@ -34,19 +34,19 @@ struct ProfileView: View {
                             HStack {
                                 Image(systemName: "arrow.right.square")
                                 Text("Sign Out")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                                    .font(AppTheme.Child.headlineFont)
                             }
-                            .foregroundStyle(Color.kidzoneDanger)
+                            .foregroundStyle(AppTheme.Child.danger)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.white.opacity(0.1))
+                                RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                                    .fill(AppTheme.Child.cardBackground.opacity(0.4))
                             )
                         }
                         .buttonStyle(ScaleButtonStyle())
                     }
-                    .padding(20)
+                    .padding(AppTheme.Child.screenPadding)
                 }
             }
             .navigationTitle("Profile")
@@ -58,14 +58,14 @@ struct ProfileView: View {
 struct ProfileHeader: View {
     let user: User
     let creditScore: Int
-    
+
     var body: some View {
         VStack(spacing: 16) {
             // Avatar
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.kidzoneBlue, Color.kidzonePink],
+                        colors: [AppTheme.Child.primary, AppTheme.Child.secondary],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -76,48 +76,48 @@ struct ProfileHeader: View {
                         .font(.system(size: 48, design: .rounded).weight(.heavy))
                         .foregroundStyle(.white)
                 )
-            
+
             VStack(spacing: 4) {
                 Text(user.username)
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.titleFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 if let email = user.email {
                     Text(email)
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(AppTheme.Child.bodyFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
                 }
             }
-            
+
             ScoreBadge(score: creditScore)
         }
         .padding(24)
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
 
 struct StatsSection: View {
     let state: AppState
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your Stats")
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             VStack(spacing: 12) {
                 StatRow(label: "Wallet Balance", value: state.walletBalanceFormatted, icon: "wallet.pass.fill")
                 StatRow(label: "Credit Line", value: state.creditLineFormatted, icon: "creditcard.fill")
                 StatRow(label: "Device Hours", value: state.deviceHours.formatted(), icon: "clock.fill")
             }
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
@@ -126,23 +126,23 @@ struct StatRow: View {
     let label: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundStyle(Color.kidzoneYellow)
+                .foregroundStyle(AppTheme.Child.accent)
                 .frame(width: 30)
-            
+
             Text(label)
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
-            
+                .font(AppTheme.Child.bodyFont)
+                .foregroundStyle(AppTheme.Child.textSecondary)
+
             Spacer()
-            
+
             Text(value)
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
         }
     }
 }
@@ -151,9 +151,9 @@ struct AchievementsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Achievements 🏆")
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     AchievementBadge(icon: "star.fill", title: "First Chore", unlocked: true)
@@ -163,10 +163,10 @@ struct AchievementsSection: View {
                 }
             }
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
@@ -175,42 +175,42 @@ struct AchievementBadge: View {
     let icon: String
     let title: String
     let unlocked: Bool
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 32))
-                .foregroundStyle(unlocked ? Color.kidzoneYellow : .white.opacity(0.3))
-            
+                .foregroundStyle(unlocked ? AppTheme.Child.accent : AppTheme.Child.textSecondary.opacity(0.3))
+
             Text(title)
-                .font(.system(.caption, design: .rounded).weight(.semibold))
-                .foregroundStyle(unlocked ? .white : .white.opacity(0.5))
+                .font(AppTheme.Child.captionFont.weight(.semibold))
+                .foregroundStyle(unlocked ? AppTheme.Child.textPrimary : AppTheme.Child.textSecondary.opacity(0.5))
         }
         .frame(width: 80, height: 80)
         .background(
             Circle()
-                .fill(unlocked ? .white.opacity(0.15) : .white.opacity(0.05))
+                .fill(unlocked ? AppTheme.Child.cardBackground.opacity(0.6) : AppTheme.Child.cardBackground.opacity(0.2))
         )
     }
 }
 
 struct SettingsSection: View {
     @Binding var showSettings: Bool
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Settings")
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             SettingsButton(icon: "bell.fill", title: "Notifications", action: {})
             SettingsButton(icon: "lock.fill", title: "Privacy", action: {})
             SettingsButton(icon: "questionmark.circle.fill", title: "Help & Support", action: {})
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
@@ -219,26 +219,25 @@ struct SettingsButton: View {
     let icon: String
     let title: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundStyle(Color.kidzoneBlue)
+                    .foregroundStyle(AppTheme.Child.primary)
                     .frame(width: 30)
-                
+
                 Text(title)
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.bodyFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(AppTheme.Child.textSecondary)
             }
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
-

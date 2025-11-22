@@ -13,15 +13,18 @@ class AuthenticationManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     // In production, this would be stored securely (Keychain)
     private var authToken: String?
-    
+
+    // Temporary storage for user data before role selection
+    private var pendingUser: User?
+
     init() {
         // Check if user is already logged in (from Keychain/local storage)
         checkExistingAuth()
     }
-    
+
     private func checkExistingAuth() {
         // TODO: Check Keychain for stored token
         // For now, set to mock user for testing
@@ -32,11 +35,11 @@ class AuthenticationManager: ObservableObject {
     func signIn(with provider: AuthProvider, completion: @escaping (Result<User, Error>) -> Void) {
         isLoading = true
         errorMessage = nil
-        
+
         // Simulate OAuth flow - In production, use real OAuth SDKs
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.isLoading = false
-            
+
             // Mock successful authentication
             let mockUser = User(
                 id: UUID().uuidString,
@@ -47,27 +50,34 @@ class AuthenticationManager: ObservableObject {
                 currentCreditScore: 300,
                 parentCode: nil
             )
-            
-            self?.currentUser = mockUser
+
+            // Store user temporarily - don't set currentUser yet!
+            // This allows RoleSelectionView to show
+            self?.pendingUser = mockUser
             self?.authToken = "mock_token_\(UUID().uuidString)"
             self?.isAuthenticated = true
-            
+
             completion(.success(mockUser))
         }
     }
     
     func signOut() {
         currentUser = nil
+        pendingUser = nil
         authToken = nil
         isAuthenticated = false
         // TODO: Clear Keychain
     }
     
     func updateUserRole(_ role: UserRole, parentCode: String? = nil) {
-        guard var user = currentUser else { return }
+        // Use pending user if currentUser is not set yet
+        guard var user = pendingUser ?? currentUser else { return }
         user.role = role
         user.parentCode = parentCode
+
+        // Now set the currentUser to complete the flow
         currentUser = user
+        pendingUser = nil // Clear pending user
     }
     
     func validateParentCode(_ code: String) -> Bool {

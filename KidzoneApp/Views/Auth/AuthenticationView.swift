@@ -9,8 +9,13 @@ struct AuthenticationView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.childGradient
-                .ignoresSafeArea()
+            // Neutral auth gradient
+            LinearGradient(
+                colors: [AppTheme.Child.primary, AppTheme.Child.secondary, Color.parentNavy],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 30) {
                 // Close button

@@ -7,8 +7,13 @@ struct WelcomeView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.childGradient
-                .ignoresSafeArea()
+            // Neutral welcome gradient (blend of both themes)
+            LinearGradient(
+                colors: [AppTheme.Child.primary, AppTheme.Child.secondary, Color.parentNavy],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 40) {
                 Spacer()

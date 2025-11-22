@@ -7,21 +7,21 @@ struct ChoresView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 if appState.state.chores.isEmpty {
                     emptyStateView
                 } else {
                     ScrollView {
-                        VStack(spacing: 16) {
+                        VStack(spacing: AppTheme.Child.cardSpacing) {
                             ForEach(appState.state.chores) { chore in
                                 ChoreCard(chore: chore) {
                                     selectedChore = chore
                                 }
                             }
                         }
-                        .padding(20)
+                        .padding(AppTheme.Child.screenPadding)
                     }
                 }
             }
@@ -32,20 +32,20 @@ struct ChoresView: View {
             }
         }
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Image(systemName: "checkmark.circle.badge.questionmark")
                 .font(.system(size: 80))
-                .foregroundStyle(.white.opacity(0.5))
-            
+                .foregroundStyle(AppTheme.Child.textSecondary.opacity(0.5))
+
             Text("No chores yet!")
-                .font(.system(.title2, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.titleFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             Text("Your parent will assign chores soon")
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(AppTheme.Child.bodyFont)
+                .foregroundStyle(AppTheme.Child.textSecondary)
         }
     }
 }
@@ -53,15 +53,15 @@ struct ChoresView: View {
 struct ChoreCard: View {
     let chore: Chore
     let action: () -> Void
-    
+
     var statusColor: Color {
         switch chore.status {
-        case .pending: return Color.kidzoneWarning
-        case .approved: return Color.kidzoneSuccess
-        case .overdue: return Color.kidzoneDanger
+        case .pending: return AppTheme.Child.warning
+        case .approved: return AppTheme.Child.success
+        case .overdue: return AppTheme.Child.danger
         }
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
@@ -69,28 +69,28 @@ struct ChoreCard: View {
                 Circle()
                     .fill(statusColor)
                     .frame(width: 12, height: 12)
-                
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text(chore.title)
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                    
+                        .font(AppTheme.Child.headlineFont)
+                        .foregroundStyle(AppTheme.Child.textPrimary)
+
                     Text(chore.detail)
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(AppTheme.Child.bodyFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
                         .lineLimit(2)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 8) {
                     Text(chore.rewardFormatted)
-                        .font(.system(.title3, design: .rounded).weight(.bold))
-                        .foregroundStyle(Color.kidzoneYellow)
-                    
+                        .font(AppTheme.Child.headlineFont.weight(.bold))
+                        .foregroundStyle(AppTheme.Child.accent)
+
                     Text(chore.status.label)
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
+                        .font(AppTheme.Child.captionFont.weight(.bold))
+                        .foregroundStyle(AppTheme.Child.textPrimary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(
@@ -99,13 +99,13 @@ struct ChoreCard: View {
                         )
                 }
             }
-            .padding(20)
+            .padding(AppTheme.Child.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.white.opacity(0.1))
+                RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                    .fill(AppTheme.Child.cardBackground.opacity(0.4))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                            .stroke(AppTheme.Child.textSecondary.opacity(0.1), lineWidth: 1)
                     )
             )
         }
@@ -117,35 +117,35 @@ struct ChoreDetailView: View {
     let chore: Chore
     @Environment(\.dismiss) var dismiss
     @State private var showCompletionAlert = false
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 30) {
                     VStack(spacing: 16) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 80))
-                            .foregroundStyle(Color.kidzoneSuccess)
-                        
+                            .foregroundStyle(AppTheme.Child.success)
+
                         Text(chore.title)
-                            .font(.system(.largeTitle, design: .rounded).weight(.heavy))
-                            .foregroundStyle(.white)
-                        
+                            .font(AppTheme.Child.titleFont)
+                            .foregroundStyle(AppTheme.Child.textPrimary)
+
                         Text(chore.detail)
-                            .font(.system(.title3, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .font(AppTheme.Child.headlineFont)
+                            .foregroundStyle(AppTheme.Child.textSecondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 40)
-                    
+
                     Spacer()
-                    
+
                     VStack(spacing: 20) {
                         RewardCard(amount: chore.rewardFormatted)
-                        
+
                         if chore.status == .pending {
                             Button(action: {
                                 showCompletionAlert = true
@@ -153,14 +153,14 @@ struct ChoreDetailView: View {
                                 HStack {
                                     Image(systemName: "checkmark.circle.fill")
                                     Text("Mark as Complete")
-                                        .font(.system(.headline, design: .rounded).weight(.bold))
+                                        .font(AppTheme.Child.headlineFont)
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)
                                 .background(
                                     Capsule()
-                                        .fill(Color.kidzoneSuccess)
+                                        .fill(AppTheme.Child.success)
                                 )
                             }
                             .buttonStyle(ScaleButtonStyle())
@@ -177,7 +177,7 @@ struct ChoreDetailView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
                 }
             }
             .alert("Complete Chore?", isPresented: $showCompletionAlert) {
@@ -195,22 +195,22 @@ struct ChoreDetailView: View {
 
 struct RewardCard: View {
     let amount: String
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Text("Reward")
-                .font(.system(.caption, design: .rounded))
-                .foregroundStyle(.white.opacity(0.7))
-            
+                .font(AppTheme.Child.captionFont)
+                .foregroundStyle(AppTheme.Child.textSecondary)
+
             Text(amount)
                 .font(.system(size: 48, design: .rounded).weight(.heavy))
-                .foregroundStyle(Color.kidzoneYellow)
+                .foregroundStyle(AppTheme.Child.accent)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.15))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }

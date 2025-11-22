@@ -10,27 +10,27 @@ struct ParentApprovalsView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.parentGradient
+                AppTheme.Parent.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 if pendingChores.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 80))
-                            .foregroundStyle(.white.opacity(0.5))
-                        
+                            .foregroundStyle(AppTheme.Parent.success.opacity(0.5))
+
                         Text("All caught up!")
-                            .font(.system(.title2, design: .rounded).weight(.bold))
-                            .foregroundStyle(.white)
+                            .font(AppTheme.Parent.titleFont)
+                            .foregroundStyle(AppTheme.Parent.textPrimary)
                     }
                 } else {
                     ScrollView {
-                        VStack(spacing: 16) {
+                        VStack(spacing: AppTheme.Parent.cardSpacing) {
                             ForEach(pendingChores) { chore in
                                 ApprovalCard(chore: chore)
                             }
                         }
-                        .padding(20)
+                        .padding(AppTheme.Parent.screenPadding)
                     }
                 }
             }
@@ -42,31 +42,31 @@ struct ParentApprovalsView: View {
 
 struct ApprovalCard: View {
     let chore: Chore
-    
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(chore.title)
-                        .font(.system(.title3, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                    
+                        .font(AppTheme.Parent.headlineFont.weight(.bold))
+                        .foregroundStyle(AppTheme.Parent.textPrimary)
+
                     Text(chore.detail)
-                        .font(.system(.body, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(AppTheme.Parent.bodyFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
                 }
-                
+
                 Spacer()
             }
-            
+
             HStack {
                 Text("Reward: \(chore.rewardFormatted)")
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(Color.kidzoneYellow)
-                
+                    .font(AppTheme.Parent.headlineFont)
+                    .foregroundStyle(AppTheme.Parent.success)
+
                 Spacer()
             }
-            
+
             HStack(spacing: 12) {
                 Button(action: {
                     // TODO: Approve
@@ -74,39 +74,43 @@ struct ApprovalCard: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                         Text("Approve")
-                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .font(AppTheme.Parent.bodyFont.weight(.semibold))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.kidzoneSuccess)
+                            .fill(AppTheme.Parent.success)
                     )
                 }
-                
+
                 Button(action: {
                     // TODO: Reject
                 }) {
                     HStack {
                         Image(systemName: "xmark.circle.fill")
                         Text("Reject")
-                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .font(AppTheme.Parent.bodyFont.weight(.semibold))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.kidzoneDanger)
+                            .fill(AppTheme.Parent.danger)
                     )
                 }
             }
         }
-        .padding(20)
+        .padding(AppTheme.Parent.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                        .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                )
         )
     }
 }

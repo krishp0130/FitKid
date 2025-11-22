@@ -7,16 +7,16 @@ struct ParentChoresView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.parentGradient
+                AppTheme.Parent.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Parent.cardSpacing) {
                         ForEach(appState.state.chores) { chore in
                             ParentChoreCard(chore: chore)
                         }
                     }
-                    .padding(20)
+                    .padding(AppTheme.Parent.screenPadding)
                 }
             }
             .navigationTitle("Chores")
@@ -25,7 +25,8 @@ struct ParentChoresView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showAddChore = true }) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.white)
+                            .font(.system(size: 24))
+                            .foregroundStyle(AppTheme.Parent.primary)
                     }
                 }
             }
@@ -38,39 +39,47 @@ struct ParentChoresView: View {
 
 struct ParentChoreCard: View {
     let chore: Chore
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
                 Text(chore.title)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Parent.headlineFont)
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
+
                 Text(chore.detail)
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
-                
+                    .font(AppTheme.Parent.bodyFont)
+                    .foregroundStyle(AppTheme.Parent.textSecondary)
+
                 Text("Reward: \(chore.rewardFormatted)")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(Color.kidzoneYellow)
+                    .font(AppTheme.Parent.captionFont)
+                    .foregroundStyle(AppTheme.Parent.success)
             }
-            
+
             Spacer()
-            
+
             Text(chore.status.label)
-                .font(.system(.caption, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
+                .font(AppTheme.Parent.captionFont.weight(.semibold))
+                .foregroundStyle(AppTheme.Parent.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
                     Capsule()
-                        .fill(.white.opacity(0.2))
+                        .fill(AppTheme.Parent.cardBackground)
+                        .overlay(
+                            Capsule()
+                                .stroke(AppTheme.Parent.textSecondary.opacity(0.3), lineWidth: 1)
+                        )
                 )
         }
-        .padding(20)
+        .padding(AppTheme.Parent.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                        .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                )
         )
     }
 }
@@ -80,13 +89,13 @@ struct AddChoreView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var reward = ""
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.parentGradient
+                AppTheme.Parent.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 Form {
                     Section("Chore Details") {
                         TextField("Title", text: $title)
@@ -95,12 +104,13 @@ struct AddChoreView: View {
                         TextField("Reward ($)", text: $reward)
                             .keyboardType(.decimalPad)
                     }
-                    
+
                     Section {
                         Button("Create Chore") {
                             // TODO: Create chore
                             dismiss()
                         }
+                        .foregroundStyle(AppTheme.Parent.primary)
                     }
                 }
             }
@@ -111,6 +121,7 @@ struct AddChoreView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
                 }
             }
         }

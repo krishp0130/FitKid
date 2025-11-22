@@ -4,30 +4,30 @@ import SwiftUI
 struct CircularGauge: View {
     var value: Double
     var maxValue: Double
-    
+
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.15), lineWidth: 14)
-            
+                .stroke(AppTheme.Child.textSecondary.opacity(0.3), lineWidth: 14)
+
             Circle()
                 .trim(from: 0, to: value / maxValue)
                 .stroke(
                     AngularGradient(
-                        colors: [Color.kidzoneGreen, Color.kidzoneBlue, Color.kidzonePink],
+                        colors: [AppTheme.Child.success, AppTheme.Child.primary, AppTheme.Child.secondary],
                         center: .center
                     ),
                     style: StrokeStyle(lineWidth: 14, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-            
+
             VStack(spacing: 4) {
                 Text("Score")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(AppTheme.Child.captionFont)
+                    .foregroundStyle(AppTheme.Child.textSecondary)
                 Text(String(Int(value)))
-                    .font(.system(.title2, design: .rounded).weight(.heavy))
-                    .foregroundStyle(.white)
+                    .font(AppTheme.Child.headlineFont.weight(.heavy))
+                    .foregroundStyle(AppTheme.Child.textPrimary)
             }
         }
     }
@@ -36,7 +36,7 @@ struct CircularGauge: View {
 // MARK: - Score Badge
 struct ScoreBadge: View {
     var score: Int
-    
+
     var label: String {
         switch score {
         case ..<580: return "Risky"
@@ -46,21 +46,21 @@ struct ScoreBadge: View {
         default: return "Elite"
         }
     }
-    
+
     var color: Color {
         switch score {
-        case ..<580: return Color.kidzoneDanger
-        case 580..<670: return Color.kidzoneWarning
-        case 670..<740: return Color.kidzoneBlue
-        case 740..<800: return Color.kidzoneGreen
-        default: return Color.kidzonePink
+        case ..<580: return AppTheme.Child.danger
+        case 580..<670: return AppTheme.Child.warning
+        case 670..<740: return AppTheme.Child.secondary
+        case 740..<800: return AppTheme.Child.success
+        default: return AppTheme.Child.primary
         }
     }
-    
+
     var body: some View {
         Text(label.uppercased())
-            .font(.system(.caption2, design: .rounded).weight(.bold))
-            .foregroundStyle(.white)
+            .font(AppTheme.Child.captionFont.weight(.bold))
+            .foregroundStyle(AppTheme.Child.textPrimary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(color.opacity(0.65))
@@ -72,19 +72,19 @@ struct ScoreBadge: View {
 struct MetricPill: View {
     var label: String
     var value: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(.caption2, design: .rounded))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(AppTheme.Child.captionFont)
+                .foregroundStyle(AppTheme.Child.textSecondary)
             Text(value)
-                .font(.system(.headline, design: .rounded).weight(.semibold))
-                .foregroundStyle(.white)
+                .font(AppTheme.Child.bodyFont.weight(.semibold))
+                .foregroundStyle(AppTheme.Child.textPrimary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.05))
+        .background(AppTheme.Child.textPrimary.opacity(0.05))
         .clipShape(Capsule())
     }
 }
@@ -92,37 +92,37 @@ struct MetricPill: View {
 // MARK: - Chore Row
 struct ChoreRow: View {
     var chore: Chore
-    
+
     var statusColor: Color {
         switch chore.status {
-        case .pending: return Color.kidzoneWarning
-        case .approved: return Color.kidzoneSuccess
-        case .overdue: return Color.kidzoneDanger
+        case .pending: return AppTheme.Child.warning
+        case .approved: return AppTheme.Child.success
+        case .overdue: return AppTheme.Child.danger
         }
     }
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(chore.title)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.bodyFont.weight(.semibold))
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 Text(chore.detail)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(AppTheme.Child.captionFont)
+                    .foregroundStyle(AppTheme.Child.textSecondary)
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing, spacing: 4) {
                 Text(chore.rewardFormatted)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(Color.kidzoneYellow)
-                
+                    .font(AppTheme.Child.bodyFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Child.accent)
+
                 Text(chore.status.label)
-                    .font(.system(.caption2, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(AppTheme.Child.captionFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Child.textPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(statusColor.opacity(0.4))
@@ -130,7 +130,7 @@ struct ChoreRow: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.05))
+        .background(AppTheme.Child.textPrimary.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }

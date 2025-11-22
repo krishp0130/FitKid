@@ -7,33 +7,33 @@ struct ChildDashboardView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
                         // Header
                         headerSection
-                        
+
                         // Credit Score Card (Large & Prominent)
                         creditScoreCard
-                        
+
                         // Wallet Balance
                         walletBalanceCard
-                        
+
                         // Quick Actions
                         quickActionsSection
-                        
+
                         // Chores Preview
                         choresPreview
-                        
+
                         // Marketplace Preview
                         marketplacePreview
-                        
+
                         // Device Hours
                         deviceHoursCard
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppTheme.Child.screenPadding)
                     .padding(.bottom, 32)
                 }
             }
@@ -41,8 +41,8 @@ struct ChildDashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Kidzone")
-                        .font(.system(.title2, design: .rounded).weight(.heavy))
-                        .foregroundStyle(.white)
+                        .font(AppTheme.Child.headlineFont.weight(.heavy))
+                        .foregroundStyle(AppTheme.Child.textPrimary)
                 }
             }
         }
@@ -53,12 +53,12 @@ struct ChildDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             if let user = authManager.currentUser {
                 Text("Hey \(user.username)! 👋")
-                    .font(.system(.largeTitle, design: .rounded).weight(.heavy))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.titleFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 Text("Let's make money moves today! 💰")
-                    .font(.system(.title3, design: .rounded).weight(.medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .font(AppTheme.Child.headlineFont.weight(.medium))
+                    .foregroundStyle(AppTheme.Child.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -71,25 +71,25 @@ struct ChildDashboardView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Credit Score")
-                        .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
-                    
+                        .font(AppTheme.Child.headlineFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
+
                     HStack(spacing: 12) {
                         Text("\(appState.state.creditScore)")
                             .font(.system(size: 56, design: .rounded).weight(.heavy))
-                            .foregroundStyle(.white)
-                        
+                            .foregroundStyle(AppTheme.Child.textPrimary)
+
                         ScoreBadge(score: appState.state.creditScore)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Animated Circular Gauge
                 CircularGauge(value: Double(appState.state.creditScore), maxValue: 850)
                     .frame(width: 120, height: 120)
             }
-            
+
             // Stats Row
             HStack(spacing: 16) {
                 MetricPill(label: "Credit Line", value: appState.state.creditLineFormatted)
@@ -99,11 +99,11 @@ struct ChildDashboardView: View {
         }
         .padding(24)
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.white.opacity(0.15))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                        .stroke(AppTheme.Child.primary.opacity(0.3), lineWidth: 1.5)
                 )
         )
     }
@@ -113,24 +113,24 @@ struct ChildDashboardView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Your Money")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
-                
+                    .font(AppTheme.Child.captionFont)
+                    .foregroundStyle(AppTheme.Child.textSecondary)
+
                 Text(appState.state.walletBalanceFormatted)
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(Color.kidzoneYellow)
+                    .font(AppTheme.Child.titleFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Child.accent)
             }
-            
+
             Spacer()
-            
+
             Image(systemName: "wallet.pass.fill")
                 .font(.system(size: 32))
-                .foregroundStyle(Color.kidzoneYellow)
+                .foregroundStyle(AppTheme.Child.accent)
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
     
@@ -138,19 +138,19 @@ struct ChildDashboardView: View {
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Quick Actions")
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             HStack(spacing: 12) {
-                QuickActionButton(icon: "checkmark.circle.fill", label: "Do Chores", color: Color.kidzoneGreen) {
+                QuickActionButton(icon: "checkmark.circle.fill", label: "Do Chores", color: AppTheme.Child.success) {
                     // Navigate to chores
                 }
-                
-                QuickActionButton(icon: "cart.fill", label: "Shop", color: Color.kidzoneOrange) {
+
+                QuickActionButton(icon: "cart.fill", label: "Shop", color: AppTheme.Child.secondary) {
                     // Navigate to marketplace
                 }
-                
-                QuickActionButton(icon: "creditcard.fill", label: "My Cards", color: Color.kidzonePink) {
+
+                QuickActionButton(icon: "creditcard.fill", label: "My Cards", color: AppTheme.Child.primary) {
                     // Navigate to cards
                 }
             }
@@ -162,46 +162,46 @@ struct ChildDashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Your Chores")
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.headlineFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 Spacer()
-                
+
                 NavigationLink(destination: ChoresView()) {
                     Text("See All")
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(Color.kidzoneBlue)
+                        .font(AppTheme.Child.bodyFont.weight(.semibold))
+                        .foregroundStyle(AppTheme.Child.primary)
                 }
             }
-            
+
             ForEach(Array(appState.state.chores.prefix(2))) { chore in
                 ChoreRow(chore: chore)
             }
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
-    
+
     // MARK: - Marketplace Preview
     private var marketplacePreview: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Featured Rewards")
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                
+                    .font(AppTheme.Child.headlineFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
+
                 Spacer()
-                
+
                 NavigationLink(destination: MarketplaceView()) {
                     Text("Shop All")
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(Color.kidzoneBlue)
+                        .font(AppTheme.Child.bodyFont.weight(.semibold))
+                        .foregroundStyle(AppTheme.Child.primary)
                 }
             }
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(Array(appState.state.marketItems.prefix(3))) { item in
@@ -210,64 +210,64 @@ struct ChildDashboardView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
-    
+
     // MARK: - Device Hours Card
     private var deviceHoursCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 24))
-                    .foregroundStyle(Color.kidzoneOrange)
-                
+                    .foregroundStyle(AppTheme.Child.accent)
+
                 Text("Device Hours")
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(AppTheme.Child.headlineFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
             }
-            
+
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Available Time")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                    
+                        .font(AppTheme.Child.captionFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
+
                     Text(appState.state.deviceHours.formatted())
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(Color.kidzoneOrange)
+                        .font(AppTheme.Child.titleFont.weight(.bold))
+                        .foregroundStyle(AppTheme.Child.accent)
                 }
-                
+
                 Spacer()
-                
+
                 // Health indicator
                 VStack(spacing: 4) {
                     Text("Health")
-                        .font(.system(.caption2, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                    
+                        .font(AppTheme.Child.captionFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
+
                     Circle()
-                        .fill(appState.state.deviceHealth > 0.7 ? Color.kidzoneGreen : Color.kidzoneWarning)
+                        .fill(appState.state.deviceHealth > 0.7 ? AppTheme.Child.success : AppTheme.Child.warning)
                         .frame(width: 20, height: 20)
                 }
             }
-            
+
             ProgressView(value: appState.state.deviceHealth, total: 1.0)
-                .tint(Color.kidzoneGreen)
-                .background(Color.white.opacity(0.2))
+                .tint(AppTheme.Child.success)
+                .background(AppTheme.Child.textSecondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-            
+
             Text("Keep your credit score high to unlock more screen time! 🎮")
-                .font(.system(.caption, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(AppTheme.Child.captionFont)
+                .foregroundStyle(AppTheme.Child.textSecondary)
         }
-        .padding(20)
+        .padding(AppTheme.Child.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.1))
+            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
@@ -278,23 +278,23 @@ struct QuickActionButton: View {
     let label: String
     let color: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 28))
                     .foregroundStyle(color)
-                
+
                 Text(label)
-                    .font(.system(.caption, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.white)
+                    .font(AppTheme.Child.captionFont.weight(.semibold))
+                    .foregroundStyle(AppTheme.Child.textPrimary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(.white.opacity(0.1))
+                    .fill(AppTheme.Child.cardBackground.opacity(0.4))
             )
         }
         .buttonStyle(ScaleButtonStyle())
@@ -304,29 +304,29 @@ struct QuickActionButton: View {
 // MARK: - Marketplace Preview Card
 struct MarketplacePreviewCard: View {
     let item: MarketplaceItem
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(item.tagline)
-                .font(.system(.caption2, design: .rounded).weight(.bold))
-                .foregroundStyle(.white.opacity(0.7))
-            
+                .font(AppTheme.Child.captionFont.weight(.bold))
+                .foregroundStyle(AppTheme.Child.textSecondary)
+
             Text(item.name)
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
+                .font(AppTheme.Child.headlineFont)
+                .foregroundStyle(AppTheme.Child.textPrimary)
                 .lineLimit(2)
-            
+
             Spacer()
-            
+
             Text(item.priceFormatted)
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(Color.kidzoneYellow)
+                .font(AppTheme.Child.headlineFont.weight(.bold))
+                .foregroundStyle(AppTheme.Child.accent)
         }
         .frame(width: 140, height: 120)
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.white.opacity(0.1))
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }

@@ -4,18 +4,18 @@ struct MarketplaceView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @State private var selectedItem: MarketplaceItem?
     @State private var showPurchaseSheet = false
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 16),
-                        GridItem(.flexible(), spacing: 16)
-                    ], spacing: 16) {
+                        GridItem(.flexible(), spacing: AppTheme.Child.cardSpacing),
+                        GridItem(.flexible(), spacing: AppTheme.Child.cardSpacing)
+                    ], spacing: AppTheme.Child.cardSpacing) {
                         ForEach(appState.state.marketItems) { item in
                             MarketplaceItemCard(item: item) {
                                 selectedItem = item
@@ -23,7 +23,7 @@ struct MarketplaceView: View {
                             }
                         }
                     }
-                    .padding(20)
+                    .padding(AppTheme.Child.screenPadding)
                 }
             }
             .navigationTitle("Marketplace")
@@ -38,56 +38,56 @@ struct MarketplaceView: View {
 struct MarketplaceItemCard: View {
     let item: MarketplaceItem
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 12) {
                 // Tag
                 Text(item.tagline)
-                    .font(.system(.caption2, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(AppTheme.Child.captionFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Child.textSecondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(.white.opacity(0.2))
+                            .fill(AppTheme.Child.primary.opacity(0.3))
                     )
-                
+
                 Text(item.name)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(AppTheme.Child.headlineFont)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 Text(item.description)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(AppTheme.Child.captionFont)
+                    .foregroundStyle(AppTheme.Child.textSecondary)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 Spacer()
-                
+
                 HStack {
                     Text(item.priceFormatted)
-                        .font(.system(.title3, design: .rounded).weight(.bold))
-                        .foregroundStyle(Color.kidzoneYellow)
-                    
+                        .font(AppTheme.Child.headlineFont.weight(.bold))
+                        .foregroundStyle(AppTheme.Child.accent)
+
                     Spacer()
-                    
+
                     if item.isDigital {
                         Image(systemName: "iphone")
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(AppTheme.Child.textSecondary)
                     }
                 }
             }
             .padding(16)
             .frame(height: 180)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.white.opacity(0.1))
+                RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                    .fill(AppTheme.Child.cardBackground.opacity(0.4))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                            .stroke(AppTheme.Child.textSecondary.opacity(0.1), lineWidth: 1)
                     )
             )
         }
@@ -101,62 +101,62 @@ struct PurchaseView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @State private var selectedPayment: PaymentMethod = .wallet
     @State private var showConfirm = false
-    
+
     var taxAmount: Int {
         Int(Double(item.priceCents) * appState.state.parentSettings.salesTax)
     }
-    
+
     var totalAmount: Int {
         item.priceCents + taxAmount
     }
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.childGradient
+                AppTheme.Child.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // Item Image/Icon
                         Image(systemName: item.isDigital ? "iphone" : "gift.fill")
                             .font(.system(size: 80))
-                            .foregroundStyle(Color.kidzoneYellow)
-                        
+                            .foregroundStyle(AppTheme.Child.accent)
+
                         // Item Info
                         VStack(spacing: 8) {
                             Text(item.name)
-                                .font(.system(.largeTitle, design: .rounded).weight(.heavy))
-                                .foregroundStyle(.white)
-                            
+                                .font(AppTheme.Child.titleFont)
+                                .foregroundStyle(AppTheme.Child.textPrimary)
+
                             Text(item.description)
-                                .font(.system(.body, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.8))
+                                .font(AppTheme.Child.bodyFont)
+                                .foregroundStyle(AppTheme.Child.textSecondary)
                                 .multilineTextAlignment(.center)
                         }
-                        
+
                         // Pricing
                         VStack(spacing: 12) {
                             PriceRow(label: "Price", amount: item.priceCents.asCurrency)
                             PriceRow(label: "Tax (\(Int(appState.state.parentSettings.salesTax * 100))%)", amount: taxAmount.asCurrency)
-                            
+
                             Divider()
-                                .background(.white.opacity(0.3))
-                            
+                                .background(AppTheme.Child.textSecondary.opacity(0.3))
+
                             PriceRow(label: "Total", amount: totalAmount.asCurrency, isTotal: true)
                         }
-                        .padding(20)
+                        .padding(AppTheme.Child.cardPadding)
                         .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(.white.opacity(0.1))
+                            RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                                .fill(AppTheme.Child.cardBackground.opacity(0.4))
                         )
-                        
+
                         // Payment Method
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Payment Method")
-                                .font(.system(.headline, design: .rounded))
-                                .foregroundStyle(.white)
-                            
+                                .font(AppTheme.Child.headlineFont)
+                                .foregroundStyle(AppTheme.Child.textPrimary)
+
                             PaymentMethodButton(
                                 method: .wallet,
                                 balance: appState.state.walletBalanceFormatted,
@@ -164,7 +164,7 @@ struct PurchaseView: View {
                             ) {
                                 selectedPayment = .wallet
                             }
-                            
+
                             PaymentMethodButton(
                                 method: .credit,
                                 balance: "\(appState.state.utilization) used",
@@ -173,14 +173,14 @@ struct PurchaseView: View {
                                 selectedPayment = .credit
                             }
                         }
-                        
+
                         // Buy Button
                         Button(action: {
                             showConfirm = true
                         }) {
                             HStack {
                                 Text("Buy Now")
-                                    .font(.system(.title3, design: .rounded).weight(.bold))
+                                    .font(AppTheme.Child.headlineFont)
                                 Image(systemName: "arrow.right.circle.fill")
                             }
                             .foregroundStyle(.white)
@@ -188,7 +188,7 @@ struct PurchaseView: View {
                             .padding(.vertical, 18)
                             .background(
                                 Capsule()
-                                    .fill(Color.kidzoneSuccess)
+                                    .fill(AppTheme.Child.success)
                             )
                         }
                         .buttonStyle(ScaleButtonStyle())
@@ -203,7 +203,7 @@ struct PurchaseView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppTheme.Child.textPrimary)
                 }
             }
             .alert("Confirm Purchase?", isPresented: $showConfirm) {
@@ -223,18 +223,18 @@ struct PriceRow: View {
     let label: String
     let amount: String
     var isTotal = false
-    
+
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(isTotal ? .headline : .body, design: .rounded))
-                .foregroundStyle(.white.opacity(isTotal ? 1.0 : 0.8))
-            
+                .font(isTotal ? AppTheme.Child.headlineFont : AppTheme.Child.bodyFont)
+                .foregroundStyle(isTotal ? AppTheme.Child.textPrimary : AppTheme.Child.textSecondary)
+
             Spacer()
-            
+
             Text(amount)
-                .font(.system(isTotal ? .title2 : .headline, design: .rounded).weight(.bold))
-                .foregroundStyle(isTotal ? Color.kidzoneYellow : .white)
+                .font(isTotal ? AppTheme.Child.titleFont : AppTheme.Child.headlineFont)
+                .foregroundStyle(isTotal ? AppTheme.Child.accent : AppTheme.Child.textPrimary)
         }
     }
 }
@@ -244,46 +244,45 @@ struct PaymentMethodButton: View {
     let balance: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var icon: String {
         method == .wallet ? "wallet.pass.fill" : "creditcard.fill"
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundStyle(isSelected ? Color.kidzoneYellow : .white.opacity(0.7))
-                
+                    .foregroundStyle(isSelected ? AppTheme.Child.accent : AppTheme.Child.textSecondary)
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(method == .wallet ? "Wallet" : "Credit Card")
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                    
+                        .font(AppTheme.Child.headlineFont)
+                        .foregroundStyle(AppTheme.Child.textPrimary)
+
                     Text(balance)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(AppTheme.Child.captionFont)
+                        .foregroundStyle(AppTheme.Child.textSecondary)
                 }
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.kidzoneYellow)
+                        .foregroundStyle(AppTheme.Child.accent)
                 }
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? .white.opacity(0.2) : .white.opacity(0.1))
+                RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                    .fill(isSelected ? AppTheme.Child.cardBackground.opacity(0.6) : AppTheme.Child.cardBackground.opacity(0.4))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(isSelected ? Color.kidzoneYellow : .white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+                        RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                            .stroke(isSelected ? AppTheme.Child.accent : AppTheme.Child.textSecondary.opacity(0.2), lineWidth: isSelected ? 2 : 1)
                     )
             )
         }
         .buttonStyle(ScaleButtonStyle())
     }
 }
-

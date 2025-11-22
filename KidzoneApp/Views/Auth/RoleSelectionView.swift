@@ -10,16 +10,21 @@ struct RoleSelectionView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.childGradient
-                .ignoresSafeArea()
-            
+            // Neutral gradient for role selection (blend of both themes)
+            LinearGradient(
+                colors: [Color.parentNavy, AppTheme.Child.primary, AppTheme.Child.secondary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
             VStack(spacing: 40) {
                 Spacer()
-                
+
                 Text("Who are you?")
                     .font(.system(size: 42, design: .rounded).weight(.heavy))
                     .foregroundStyle(.white)
-                
+
                 Text("Choose your role to get started")
                     .font(.system(.title3, design: .rounded))
                     .foregroundStyle(.white.opacity(0.9))

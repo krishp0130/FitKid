@@ -7,17 +7,17 @@ struct ChildWelcomeView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.childGradient
+            AppTheme.Child.backgroundGradient
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 30) {
                 Spacer()
-                
+
                 // Welcome Animation
                 VStack(spacing: 20) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 80))
-                        .foregroundStyle(Color.kidzoneYellow)
+                        .foregroundStyle(AppTheme.Child.accent)
                         .rotationEffect(.degrees(bounceAnimation ? 360 : 0))
                         .scaleEffect(bounceAnimation ? 1.2 : 1.0)
                         .animation(
@@ -76,24 +76,24 @@ struct ChildWelcomeView: View {
 struct FeatureBadge: View {
     let icon: String
     let text: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundStyle(Color.kidzoneYellow)
-            
+                .foregroundStyle(AppTheme.Child.accent)
+
             Text(text)
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(.white)
-            
+                .font(AppTheme.Child.bodyFont.weight(.medium))
+                .foregroundStyle(AppTheme.Child.textPrimary)
+
             Spacer()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(.white.opacity(0.15))
+                .fill(AppTheme.Child.cardBackground.opacity(0.4))
         )
     }
 }
