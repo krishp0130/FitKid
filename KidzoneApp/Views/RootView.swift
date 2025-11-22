@@ -7,7 +7,12 @@ struct RootView: View {
         Group {
             if authManager.isAuthenticated {
                 if let user = authManager.currentUser {
-                    MainTabView(user: user)
+                    if user.role == .none {
+                        // User logged in but hasn't selected role yet
+                        RoleSelectionView()
+                    } else {
+                        MainTabView(user: user)
+                    }
                 } else {
                     RoleSelectionView()
                 }
@@ -18,4 +23,3 @@ struct RootView: View {
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: authManager.isAuthenticated)
     }
 }
-

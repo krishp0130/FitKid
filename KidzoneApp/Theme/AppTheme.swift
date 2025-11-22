@@ -1,54 +1,89 @@
 import SwiftUI
 
-// MARK: - Kid-Friendly Color Palette (Ages 7-13)
+// MARK: - Blue/Green Color Palette with Glass Morphism
 extension Color {
-    // Primary colors - bright and energetic
-    static let kidzoneBlue = Color(red: 0.20, green: 0.60, blue: 1.0)
-    static let kidzonePurple = Color(red: 0.65, green: 0.30, blue: 1.0)
-    static let kidzonePink = Color(red: 1.0, green: 0.40, blue: 0.70)
+    // Primary colors - Blue/Green theme
+    static let primaryBlue = Color(red: 0.20, green: 0.60, blue: 1.0)
+    static let primaryGreen = Color(red: 0.20, green: 0.85, blue: 0.50)
+    static let accentBlue = Color(red: 0.30, green: 0.70, blue: 1.0)
+    static let accentGreen = Color(red: 0.25, green: 0.90, blue: 0.55)
     
-    // Accent colors - fun and playful
-    static let kidzoneGreen = Color(red: 0.20, green: 0.90, blue: 0.50)
-    static let kidzoneOrange = Color(red: 1.0, green: 0.60, blue: 0.20)
-    static let kidzoneYellow = Color(red: 1.0, green: 0.85, blue: 0.20)
+    // Light mode colors
+    static let lightBackground = Color(red: 0.95, green: 0.97, blue: 1.0)
+    static let lightCard = Color.white
     
-    // Background colors
-    static let kidzoneDark = Color(red: 0.10, green: 0.12, blue: 0.20)
-    static let kidzoneDarkBlue = Color(red: 0.15, green: 0.18, blue: 0.28)
+    // Dark mode colors
+    static let darkBackground = Color(red: 0.08, green: 0.12, blue: 0.20)
+    static let darkCard = Color(red: 0.12, green: 0.18, blue: 0.28)
+    
+    // Glass morphism overlay
+    static let glassOverlay = Color.white.opacity(0.1)
+    static let glassOverlayDark = Color.black.opacity(0.2)
     
     // Status colors
-    static let kidzoneSuccess = Color(red: 0.20, green: 0.85, blue: 0.40)
-    static let kidzoneWarning = Color(red: 1.0, green: 0.70, blue: 0.20)
-    static let kidzoneDanger = Color(red: 1.0, green: 0.35, blue: 0.35)
+    static let success = Color(red: 0.20, green: 0.85, blue: 0.40)
+    static let warning = Color(red: 1.0, green: 0.70, blue: 0.20)
+    static let danger = Color(red: 1.0, green: 0.35, blue: 0.35)
+    static let info = Color(red: 0.30, green: 0.70, blue: 1.0)
     
-    // Legacy colors (for compatibility)
-    static let nightBlue = Color(red: 16/255, green: 28/255, blue: 54/255)
-    static let spacePurple = Color(red: 66/255, green: 44/255, blue: 101/255)
-    static let sunrise = Color(red: 255/255, green: 131/255, blue: 96/255)
-    static let emerald = Color(red: 54/255, green: 193/255, blue: 149/255)
-    static let skyBlue = Color(red: 89/255, green: 196/255, blue: 255/255)
-    static let amber = Color(red: 255/255, green: 199/255, blue: 94/255)
+    // Legacy compatibility
+    static let kidzoneBlue = primaryBlue
+    static let kidzoneGreen = primaryGreen
+    static let kidzoneYellow = Color(red: 1.0, green: 0.85, blue: 0.20)
+    static let kidzonePink = Color(red: 1.0, green: 0.40, blue: 0.70)
+    static let kidzoneOrange = Color(red: 1.0, green: 0.60, blue: 0.20)
+    static let kidzoneSuccess = success
+    static let kidzoneWarning = warning
+    static let kidzoneDanger = danger
 }
 
 // MARK: - Theme Configuration
 struct AppTheme {
-    static let primaryGradient = LinearGradient(
-        colors: [Color.kidzoneBlue, Color.kidzonePurple],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    // Blue/Green gradients
+    static var primaryGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.primaryBlue, Color.primaryGreen],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
     
-    static let childGradient = LinearGradient(
-        colors: [Color.kidzoneBlue, Color.kidzonePink, Color.kidzonePurple],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    static var childGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.primaryBlue, Color.accentBlue, Color.primaryGreen],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
     
-    static let parentGradient = LinearGradient(
-        colors: [Color.kidzoneDarkBlue, .spacePurple, .nightBlue],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    static var parentGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.primaryBlue.opacity(0.8), Color.primaryGreen.opacity(0.6)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    // Glass morphism effect
+    static func glassBackground(isDark: Bool = false) -> some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(isDark ? Color.glassOverlayDark : Color.glassOverlay)
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 20)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+    }
     
     // Typography
     static let titleFont = Font.system(.largeTitle, design: .rounded).weight(.heavy)
@@ -61,4 +96,3 @@ struct AppTheme {
     static let screenPadding: CGFloat = 20
     static let cardSpacing: CGFloat = 16
 }
-

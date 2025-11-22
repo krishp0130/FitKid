@@ -3,6 +3,7 @@ import Foundation
 enum UserRole: String, Codable {
     case parent = "PARENT"
     case child = "CHILD"
+    case none = "NONE" // Pending role selection
 }
 
 struct User: Codable, Identifiable {
@@ -38,4 +39,3 @@ struct User: Codable, Identifiable {
         parentCode: "ABC123"
     )
 }
-

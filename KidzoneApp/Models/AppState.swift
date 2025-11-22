@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct AppState {
     var creditScore: Int
@@ -29,9 +30,9 @@ struct AppState {
     static let mock = AppState(
         creditScore: 712,
         cards: [
-            .init(company: "Galaxy Bank", productName: "Starter Orbit", tierLabel: "Tier 1", tierIcon: "sparkles", limitCents: 40000, apr: 0.199, rewards: 0.0, balanceCents: 9000, gradient: [.spacePurple, .nightBlue]),
-            .init(company: "Future Finance", productName: "Reward Beam", tierLabel: "Tier 2", tierIcon: "arrow.triangle.branch", limitCents: 90000, apr: 0.129, rewards: 0.03, balanceCents: 18000, gradient: [.skyBlue, .emerald]),
-            .init(company: "Nova Credit", productName: "Elite Nebula", tierLabel: "Tier 3", tierIcon: "crown.fill", limitCents: 150000, apr: 0.079, rewards: 0.05, balanceCents: 0, gradient: [.sunrise, .purple])
+            .init(company: "Galaxy Bank", productName: "Starter Orbit", tierLabel: "Tier 1", tierIcon: "sparkles", limitCents: 40000, apr: 0.199, rewards: 0.0, balanceCents: 9000, gradient: [Color.primaryBlue, Color.primaryGreen]),
+            .init(company: "Future Finance", productName: "Reward Beam", tierLabel: "Tier 2", tierIcon: "arrow.triangle.branch", limitCents: 90000, apr: 0.129, rewards: 0.03, balanceCents: 18000, gradient: [Color.accentBlue, Color.accentGreen]),
+            .init(company: "Nova Credit", productName: "Elite Nebula", tierLabel: "Tier 3", tierIcon: "crown.fill", limitCents: 150000, apr: 0.079, rewards: 0.05, balanceCents: 0, gradient: [Color.primaryBlue, Color.primaryGreen])
         ],
         chores: [
             .init(title: "Clean your desk", detail: "Tidy workspace before homework", rewardCents: 1200, status: .pending),

@@ -7,19 +7,17 @@ struct WelcomeView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.childGradient
+            AppTheme.primaryGradient
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
                 Spacer()
                 
-                // Animated Logo/Icon
-                Image(systemName: "star.circle.fill")
-                    .font(.system(size: 120))
-                    .foregroundStyle(.white)
-                    .scaleEffect(bounce ? 1.1 : 1.0)
+                // App Logo (KZF)
+                AppLogoView()
+                    .scaleEffect(bounce ? 1.05 : 1.0)
                     .animation(
-                        Animation.easeInOut(duration: 1.0)
+                        Animation.easeInOut(duration: 1.5)
                             .repeatForever(autoreverses: true),
                         value: bounce
                     )
@@ -28,8 +26,8 @@ struct WelcomeView: View {
                     }
                 
                 // App Name
-                Text("Kidzone")
-                    .font(.system(size: 60, design: .rounded).weight(.heavy))
+                Text("KZF")
+                    .font(.system(size: 48, design: .rounded).weight(.heavy))
                     .foregroundStyle(.white)
                 
                 // Tagline
@@ -57,7 +55,7 @@ struct WelcomeView: View {
                     .padding(.vertical, 18)
                     .background(
                         Capsule()
-                            .fill(.white.opacity(0.2))
+                            .fill(.white.opacity(0.25))
                             .overlay(
                                 Capsule()
                                     .stroke(.white, lineWidth: 2)
@@ -69,17 +67,32 @@ struct WelcomeView: View {
             }
         }
         .fullScreenCover(isPresented: $showAuthOptions) {
-            AuthenticationView()
+            AuthSelectionView()
+                .environmentObject(authManager)
         }
     }
 }
 
-// MARK: - Button Animation Style
-struct ScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.spring(response: 0.3), value: configuration.isPressed)
+// MARK: - App Logo View
+struct AppLogoView: View {
+    var body: some View {
+        ZStack {
+            // Rounded square with gradient (Blue to Green)
+            RoundedRectangle(cornerRadius: 24)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.primaryBlue, Color.primaryGreen],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 120, height: 120)
+                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+            
+            // Dollar sign
+            Text("$")
+                .font(.system(size: 64, design: .rounded).weight(.heavy))
+                .foregroundStyle(.white)
+        }
     }
 }
-

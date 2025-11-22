@@ -54,7 +54,7 @@ struct ChildMainTabView: View {
                 }
                 .tag(4)
         }
-        .tint(Color.kidzoneYellow)
+        .tint(Color.primaryGreen)
         .onAppear {
             appState.loadMockData()
         }
@@ -92,7 +92,7 @@ struct ParentMainTabView: View {
                 }
                 .tag(3)
         }
-        .tint(Color.kidzoneBlue)
+        .tint(Color.primaryBlue)
         .onAppear {
             appState.loadMockData()
         }
