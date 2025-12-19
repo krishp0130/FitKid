@@ -33,6 +33,8 @@
 		D4B589D7BF8A6B6AD8A855ED /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D88DAAE912D3F07EED2538 /* AppState.swift */; };
 		DD107931C65761C32BDC845B /* ParentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ABA75B8AEF11F5F5507109A /* ParentSettingsView.swift */; };
 		DEBC6EE2E6D74908A5E2DA4F /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A3E9BE7A864F5E83E78A2F /* AuthSession.swift */; };
+		E0B1F2C4D5A6497E8F6B1A2C /* AuthSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2E3D4C5B6A497E8F6B1A2C /* AuthSessionResponse.swift */; };
+		E04E62B6F7D349A3B5D5C6A1 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1F3B7D1C2B4F2EAA5A6B7C /* OnboardingView.swift */; };
 		DF47CA00F6B313FFE6886850 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC975652365FBDE594AD952 /* AppTheme.swift */; };
 		E1FC735E84F69DF39E0F8D95 /* ChoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AFF236914AF0D2EF8757B6 /* ChoresView.swift */; };
 		E50CBEF505507C3560361616 /* MarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BD2C86155053E5117AF357 /* MarketplaceView.swift */; };
@@ -44,6 +46,7 @@
 		0F6581C65C3477295D3FFF47 /* AppStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateViewModel.swift; sourceTree = "<group>"; };
 		18BD2C86155053E5117AF357 /* MarketplaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceView.swift; sourceTree = "<group>"; };
 		1ABA75B8AEF11F5F5507109A /* ParentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentSettingsView.swift; sourceTree = "<group>"; };
+		1F2E3D4C5B6A497E8F6B1A2C /* AuthSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionResponse.swift; sourceTree = "<group>"; };
 		2D7D8E9204D14F81A7E2DFA9 /* Auth/AppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AppleSignInService.swift; sourceTree = "<group>"; };
 		365160D4F0ECEB31CC0E99E6 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		4F0F2E5D1B5B4B65A6E4E7F0 /* Auth/AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AuthAPI.swift; sourceTree = "<group>"; };
@@ -57,6 +60,7 @@
 		87C472BDD46F040741B6D212 /* ParentApprovalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentApprovalsView.swift; sourceTree = "<group>"; };
 		8EE3839D9634478E4AC02E8B /* KidzoneApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KidzoneApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		950C351AFE315BC7D1AAEC59 /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
+		9E1F3B7D1C2B4F2EAA5A6B7C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		A114ECCC1D961BDDF9BEA892 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A1A3E9BE7A864F5E83E78A2F /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		A4551BB1AA67AA60435E61F9 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
@@ -121,6 +125,7 @@
 				A9FBC074CDCA4A5280FDCCAC /* AuthenticationView.swift */,
 				FF665E4A35593C60F6D45750 /* ChildWelcomeView.swift */,
 				950C351AFE315BC7D1AAEC59 /* RoleSelectionView.swift */,
+				9E1F3B7D1C2B4F2EAA5A6B7C /* OnboardingView.swift */,
 				6C97A2E49E9860F1B30BE115 /* WelcomeView.swift */,
 			);
 			path = Auth;
@@ -132,6 +137,7 @@
 				F6D88DAAE912D3F07EED2538 /* AppState.swift */,
 				A4551BB1AA67AA60435E61F9 /* DataModels.swift */,
 				83CA18189263CF5E50016B62 /* User.swift */,
+				1F2E3D4C5B6A497E8F6B1A2C /* AuthSessionResponse.swift */,
 				A1A3E9BE7A864F5E83E78A2F /* AuthSession.swift */,
 			);
 			path = Models;
@@ -279,6 +285,7 @@
 				D4B589D7BF8A6B6AD8A855ED /* AppState.swift in Sources */,
 				65F76304833E237BB61620F9 /* AppStateViewModel.swift in Sources */,
 				DEBC6EE2E6D74908A5E2DA4F /* AuthSession.swift in Sources */,
+				E0B1F2C4D5A6497E8F6B1A2C /* AuthSessionResponse.swift in Sources */,
 				0A7E8D7F3C4BE6A7C9F5A2D2 /* Auth/AuthAPI.swift in Sources */,
 				B52F8E2B2E9344D8A2BC9D0A /* Auth/AppleSignInService.swift in Sources */,
 				DF47CA00F6B313FFE6886850 /* AppTheme.swift in Sources */,
@@ -287,6 +294,7 @@
 				87A03009D5BB74CAEBD9B54B /* ChildDashboardView.swift in Sources */,
 				AE5E2826FC7D9441607F0CB2 /* ChildWelcomeView.swift in Sources */,
 				E1FC735E84F69DF39E0F8D95 /* ChoresView.swift in Sources */,
+				E04E62B6F7D349A3B5D5C6A1 /* OnboardingView.swift in Sources */,
 				089A88DEC0085CF56D63D346 /* CreditCardsView.swift in Sources */,
 				5806C0EC0FAB81802ABE5878 /* DataModels.swift in Sources */,
 				B410FC1284815990B937416D /* KidzoneApp.swift in Sources */,

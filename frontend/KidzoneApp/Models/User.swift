@@ -38,4 +38,3 @@ struct User: Codable, Identifiable {
         parentCode: "ABC123"
     )
 }
-

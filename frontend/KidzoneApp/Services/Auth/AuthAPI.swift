@@ -26,18 +26,21 @@ final class AuthAPI {
 
     private let decoder = JSONDecoder()
     private let session: URLSession
-    private let baseURLString: String
+    private let authBaseURLString: String
+    private let onboardBaseURLString: String
 
     init(
-        baseURLString: String = "http://localhost:3000/api/auth", // change here if hitting a device: e.g., http://YOUR-MAC-IP:3000/api/auth
+        authBaseURLString: String = "http://localhost:3000/api/auth", // change here if hitting a device: e.g., http://YOUR-MAC-IP:3000/api/auth
+        onboardBaseURLString: String = "http://localhost:3000/api/onboard",
         session: URLSession = .shared
     ) {
-        self.baseURLString = baseURLString
+        self.authBaseURLString = authBaseURLString
+        self.onboardBaseURLString = onboardBaseURLString
         self.session = session
     }
 
-    func exchangeAppleToken(idToken: String, nonce: String) async throws -> AuthSession {
-        guard let url = URL(string: "\(baseURLString)/apple") else {
+    func exchangeAppleToken(idToken: String, nonce: String) async throws -> AuthSessionResponse {
+        guard let url = URL(string: "\(authBaseURLString)/apple") else {
             throw AuthAPIError.invalidURL
         }
 
@@ -61,7 +64,7 @@ final class AuthAPI {
             switch httpResponse.statusCode {
             case 200:
                 do {
-                    return try decoder.decode(AuthSession.self, from: data)
+                    return try decoder.decode(AuthSessionResponse.self, from: data)
                 } catch {
                     throw AuthAPIError.decoding(error)
                 }
@@ -76,8 +79,8 @@ final class AuthAPI {
         }
     }
 
-    func exchangeGoogleToken(idToken: String) async throws -> AuthSession {
-        guard let url = URL(string: "\(baseURLString)/google") else {
+    func exchangeGoogleToken(idToken: String) async throws -> AuthSessionResponse {
+        guard let url = URL(string: "\(authBaseURLString)/google") else {
             throw AuthAPIError.invalidURL
         }
 
@@ -97,7 +100,7 @@ final class AuthAPI {
             switch httpResponse.statusCode {
             case 200:
                 do {
-                    return try decoder.decode(AuthSession.self, from: data)
+                    return try decoder.decode(AuthSessionResponse.self, from: data)
                 } catch {
                     throw AuthAPIError.decoding(error)
                 }
@@ -111,4 +114,88 @@ final class AuthAPI {
             throw AuthAPIError.network(error)
         }
     }
+
+    // Onboarding
+    func onboardParent(familyName: String, username: String, accessToken: String) async throws -> User {
+        guard let url = URL(string: "\(onboardBaseURLString)/parent") else {
+            throw AuthAPIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let payload: [String: Any] = ["familyName": familyName, "username": username]
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthAPIError.invalidResponse
+        }
+        switch httpResponse.statusCode {
+        case 200:
+            let wrapper = try decoder.decode(OnboardResponse.self, from: data)
+            return wrapper.user
+        case 401:
+            throw AuthAPIError.unauthorized
+        default:
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AuthAPIError.server(message)
+        }
+    }
+
+    func onboardChild(familyId: String, username: String, accessToken: String) async throws -> User {
+        guard let url = URL(string: "\(onboardBaseURLString)/child") else {
+            throw AuthAPIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let payload: [String: Any] = ["familyId": familyId, "username": username]
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthAPIError.invalidResponse
+        }
+        switch httpResponse.statusCode {
+        case 200:
+            let wrapper = try decoder.decode(OnboardResponse.self, from: data)
+            return wrapper.user
+        case 401:
+            throw AuthAPIError.unauthorized
+        default:
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AuthAPIError.server(message)
+        }
+    }
+
+    // Family members
+    func fetchFamilyMembers(accessToken: String) async throws -> [User] {
+        guard let url = URL(string: "\(authBaseURLString)/family/members") else {
+            throw AuthAPIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthAPIError.invalidResponse
+        }
+        switch httpResponse.statusCode {
+        case 200:
+            struct MembersWrapper: Codable { let members: [User] }
+            let decoded = try decoder.decode(MembersWrapper.self, from: data)
+            return decoded.members
+        case 401:
+            throw AuthAPIError.unauthorized
+        default:
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AuthAPIError.server(message)
+        }
+    }
+}
+
+private struct OnboardResponse: Codable {
+    let user: User
 }

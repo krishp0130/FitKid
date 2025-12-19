@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ParentSettingsView: View {
     @EnvironmentObject var appState: AppStateViewModel
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var salesTax = 8.0
     @State private var minScore = 650
     
@@ -79,6 +80,17 @@ struct ParentSettingsView: View {
                         .font(AppTheme.Parent.bodyFont.weight(.semibold))
                         .foregroundStyle(AppTheme.Parent.primary)
                     }
+
+                    Section {
+                        Button(role: .destructive) {
+                            authManager.signOut()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.right.square")
+                                Text("Sign Out")
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -86,4 +98,3 @@ struct ParentSettingsView: View {
         }
     }
 }
-

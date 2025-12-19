@@ -11,11 +11,13 @@ struct RootView: View {
                 } else {
                     RoleSelectionView()
                 }
+            } else if authManager.onboardingRequired {
+                OnboardingView()
             } else {
                 WelcomeView()
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: authManager.isAuthenticated)
+        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: authManager.onboardingRequired)
     }
 }
-

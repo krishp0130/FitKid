@@ -1,8 +1,12 @@
 import SwiftUI
+import UIKit
 
 struct ParentDashboardView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @EnvironmentObject var authManager: AuthenticationManager
+    @State private var familyMembers: [User] = []
+    @State private var isLoadingMembers = false
+    @State private var memberError: String?
     
     var body: some View {
         NavigationView {
@@ -14,6 +18,9 @@ struct ParentDashboardView: View {
                     VStack(spacing: 24) {
                         // Header
                         headerSection
+
+                        // Family Code
+                        familyCodeCard
 
                         // Family Overview
                         familyOverviewCard
@@ -32,6 +39,9 @@ struct ParentDashboardView: View {
             }
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
+            .task {
+                await loadFamilyMembers()
+            }
         }
     }
 
@@ -50,15 +60,81 @@ struct ParentDashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
+    private var familyCodeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Family Code")
+                .font(AppTheme.Parent.headlineFont)
+                .foregroundStyle(AppTheme.Parent.textPrimary)
+            if let familyId = authManager.currentUser?.familyId {
+                HStack {
+                    Text(familyId)
+                        .font(AppTheme.Parent.bodyFont.monospaced().weight(.semibold))
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                    Spacer()
+                    Button(action: {
+                        UIPasteboard.general.string = familyId
+                    }) {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .font(AppTheme.Parent.captionFont.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.Parent.primary)
+                }
+                Text("Share this code with your kids so they can join your family.")
+                    .font(AppTheme.Parent.captionFont)
+                    .foregroundStyle(AppTheme.Parent.textSecondary)
+            } else {
+                Text("Family code unavailable")
+                    .font(AppTheme.Parent.bodyFont)
+                    .foregroundStyle(AppTheme.Parent.textSecondary)
+            }
+        }
+        .padding(AppTheme.Parent.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                        .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+    
     private var familyOverviewCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Family Overview")
                 .font(AppTheme.Parent.headlineFont)
                 .foregroundStyle(AppTheme.Parent.textPrimary)
 
-            // Mock family members
-            ForEach([User.mockChild]) { member in
-                FamilyMemberRow(member: member)
+            if isLoadingMembers {
+                ProgressView()
+                    .tint(AppTheme.Parent.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let memberError {
+                Text(memberError)
+                    .font(AppTheme.Parent.captionFont)
+                    .foregroundStyle(AppTheme.Parent.danger)
+            } else if familyMembers.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                        .font(.system(size: 24, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("No children yet")
+                            .font(AppTheme.Parent.headlineFont)
+                            .foregroundStyle(AppTheme.Parent.textPrimary)
+                        Text("Share the family code so your kids can join.")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(familyMembers) { member in
+                    FamilyMemberRow(member: member)
+                }
             }
         }
         .padding(AppTheme.Parent.cardPadding)
@@ -137,6 +213,25 @@ struct ParentDashboardView: View {
             HStack(spacing: 12) {
                 QuickStatCard(title: "Total Chores", value: "\(appState.state.chores.count)", icon: "list.clipboard.fill", color: AppTheme.Parent.primary)
                 QuickStatCard(title: "Avg Score", value: "\(appState.state.creditScore)", icon: "chart.line.uptrend.xyaxis", color: AppTheme.Parent.success)
+            }
+        }
+    }
+
+    // MARK: - Data
+    private func loadFamilyMembers() async {
+        guard let token = authManager.session?.accessToken else { return }
+        if isLoadingMembers { return }
+        isLoadingMembers = true
+        memberError = nil
+        defer { isLoadingMembers = false }
+        do {
+            let members = try await AuthAPI.shared.fetchFamilyMembers(accessToken: token)
+            await MainActor.run {
+                self.familyMembers = members
+            }
+        } catch {
+            await MainActor.run {
+                self.memberError = error.localizedDescription
             }
         }
     }
@@ -250,4 +345,3 @@ struct QuickStatCard: View {
         )
     }
 }
-
