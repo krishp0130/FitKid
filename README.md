@@ -14,27 +14,17 @@ The app is designed with **ages 7-13 in mind**, featuring:
 ## 📁 Project Structure
 
 ```
-KidzoneApp/
-├── KidzoneApp.swift              # App entry point
-├── Models/
-│   ├── User.swift                # User model with role support
-│   ├── AppState.swift            # Main app state
-│   └── DataModels.swift          # Credit cards, chores, marketplace items
-├── Services/
-│   ├── AuthenticationManager.swift  # Auth & OAuth handling
-│   └── APIService.swift          # Future backend integration
-├── ViewModels/
-│   └── AppStateViewModel.swift   # State management
-├── Views/
-│   ├── RootView.swift            # Root navigation
-│   ├── MainTabView.swift         # Tab navigation for both roles
-│   ├── Auth/                     # Authentication views
-│   ├── Child/                    # Child-specific views
-│   └── Parent/                   # Parent-specific views
-├── Components/
-│   └── SharedComponents.swift    # Reusable UI components
-└── Theme/
-    └── AppTheme.swift            # Colors, gradients, typography
+frontend/                      # iOS app
+└── KidzoneApp/
+    ├── KidzoneApp.swift       # App entry point
+    ├── Models/                # User, AppState, domain models
+    ├── Services/              # Auth/API clients
+    ├── ViewModels/            # State management
+    ├── Views/                 # Auth, Child, Parent, Root views
+    ├── Components/            # Shared UI components
+    └── Theme/                 # Colors, gradients, typography
+
+backend/                       # Backend/BFF (placeholder)
 ```
 
 ## 🚀 Getting Started
@@ -46,7 +36,7 @@ KidzoneApp/
 
 ### Running the App
 
-1. Open `KidzoneApp.xcodeproj` in Xcode
+1. Open `frontend/KidzoneApp.xcodeproj` in Xcode
 2. Select a simulator (iPhone 14 or later)
 3. Press **⌘ + R** to build and run
 
@@ -110,7 +100,7 @@ The app structure is designed for easy backend integration:
 
 ### Building
 ```bash
-xcodebuild -project KidzoneApp.xcodeproj -scheme KidzoneApp -sdk iphonesimulator build
+xcodebuild -project frontend/KidzoneApp.xcodeproj -scheme KidzoneApp -sdk iphonesimulator build
 ```
 
 ### Code Style

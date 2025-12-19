@@ -3,7 +3,7 @@
 ## 🚀 Running the App
 
 1. Open Xcode
-2. Open the `KidzoneApp` folder
+2. Open the `frontend/KidzoneApp.xcodeproj`
 3. Select a simulator or device
 4. Press `Cmd + R` to run
 
@@ -49,13 +49,13 @@
 ## 🔧 Customization
 
 ### Change Colors:
-Edit `KidzoneApp/Theme/AppTheme.swift`
+Edit `frontend/KidzoneApp/Theme/AppTheme.swift`
 
 ### Modify Mock Data:
-Edit `KidzoneApp/Models/AppState.swift` (mock property)
+Edit `frontend/KidzoneApp/Models/AppState.swift` (mock property)
 
 ### Add New Views:
-Follow the structure in `KidzoneApp/Views/`
+Follow the structure in `frontend/KidzoneApp/Views/`
 
 ## 📝 Next Steps
 
@@ -89,4 +89,3 @@ Follow the structure in `KidzoneApp/Views/`
 - Swipe cards in the Credit Cards view
 - Tap chore cards for details and completion
 - Use the shop to purchase rewards
-

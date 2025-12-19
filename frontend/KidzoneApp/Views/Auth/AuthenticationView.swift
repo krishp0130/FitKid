@@ -44,33 +44,16 @@ struct AuthenticationView: View {
                 
                 Spacer()
                 
-                // OAuth Buttons
+                // Auth Buttons
                 VStack(spacing: 16) {
                     OAuthButton(
                         provider: .google,
-                        icon: "globe",
+                        icon: "g.circle.fill",
                         color: .white,
-                        isLoading: isLoading && selectedProvider == .google
+                        isLoading: isLoading && selectedProvider == .google,
+                        disabled: false
                     ) {
                         signIn(with: .google)
-                    }
-                    
-                    OAuthButton(
-                        provider: .microsoft,
-                        icon: "microsoft.logo",
-                        color: .white,
-                        isLoading: isLoading && selectedProvider == .microsoft
-                    ) {
-                        signIn(with: .microsoft)
-                    }
-                    
-                    OAuthButton(
-                        provider: .facebook,
-                        icon: "f.circle.fill",
-                        color: Color(red: 0.26, green: 0.40, blue: 0.70),
-                        isLoading: isLoading && selectedProvider == .facebook
-                    ) {
-                        signIn(with: .facebook)
                     }
                 }
                 .padding(.horizontal, 40)
@@ -107,6 +90,7 @@ struct OAuthButton: View {
     let icon: String
     let color: Color
     let isLoading: Bool
+    var disabled: Bool = false
     let action: () -> Void
     
     var body: some View {
@@ -138,7 +122,8 @@ struct OAuthButton: View {
             )
         }
         .buttonStyle(ScaleButtonStyle())
-        .disabled(isLoading)
+        .disabled(isLoading || disabled)
     }
 }
 
+// Apple button removed; Google is the primary path now.
