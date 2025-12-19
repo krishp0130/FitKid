@@ -55,6 +55,10 @@ struct AuthenticationView: View {
                     ) {
                         signIn(with: .google)
                     }
+
+                    AppleAuthButton(isLoading: isLoading && selectedProvider == .apple) {
+                        signIn(with: .apple)
+                    }
                 }
                 .padding(.horizontal, 40)
                 
@@ -126,4 +130,35 @@ struct OAuthButton: View {
     }
 }
 
-// Apple button removed; Google is the primary path now.
+struct AppleAuthButton: View {
+    let isLoading: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                } else {
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 20, weight: .bold))
+                }
+
+                Text("Continue with Apple")
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
+
+                Spacer()
+            }
+            .foregroundStyle(.black)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white)
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .disabled(isLoading)
+    }
+}

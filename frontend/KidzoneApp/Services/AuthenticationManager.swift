@@ -4,6 +4,7 @@ import GoogleSignIn
 
 enum AuthProvider: String {
     case google = "google"
+    case apple = "apple"
 }
 
 enum AuthError: LocalizedError {
@@ -29,6 +30,7 @@ class AuthenticationManager: ObservableObject {
     private let authAPI = AuthAPI.shared
     private let tokenStore: TokenStoring = KeychainTokenStore(service: "com.kidzone.auth")
     private var googleSignInService: GoogleSignInService?
+    private let appleSignInService = AppleSignInService()
 
     // Temporary storage for user data before role selection
     private var pendingUser: User?
@@ -62,16 +64,35 @@ class AuthenticationManager: ObservableObject {
         return newSession.user
     }
 
+    // MARK: - Apple
+    func signInWithApple() async throws -> User {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        let appleResult = try await appleSignInService.signIn()
+        let newSession = try await authAPI.exchangeAppleToken(idToken: appleResult.identityToken, nonce: appleResult.nonce)
+
+        try tokenStore.save(session: newSession)
+
+        session = newSession
+        currentUser = newSession.user
+        isAuthenticated = true
+
+        return newSession.user
+    }
+
     // MARK: - Entry point for UI
     func signIn(with provider: AuthProvider, completion: @escaping (Result<User, Error>) -> Void) {
-        guard provider == .google else {
-            completion(.failure(AuthError.notImplemented))
-            return
-        }
-
         Task {
             do {
-                let user = try await signInWithGoogle()
+                let user: User
+                switch provider {
+                case .google:
+                    user = try await signInWithGoogle()
+                case .apple:
+                    user = try await signInWithApple()
+                }
                 completion(.success(user))
             } catch {
                 completion(.failure(error))

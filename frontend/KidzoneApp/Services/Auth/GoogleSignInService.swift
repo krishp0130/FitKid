@@ -6,6 +6,7 @@ struct GoogleSignInResult {
     let idToken: String
 }
 
+@MainActor
 final class GoogleSignInService {
     private let clientID: String
 
@@ -28,16 +29,26 @@ final class GoogleSignInService {
         return GoogleSignInResult(idToken: idToken)
     }
 
-    private func topViewController(controller: UIViewController? = UIApplication.shared.windows.first { $0.isKeyWindow }?.rootViewController) -> UIViewController? {
+    private func topViewController() -> UIViewController? {
+        let keyWindow = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }
+
+        var controller = keyWindow?.rootViewController
+
+        while let presented = controller?.presentedViewController {
+            controller = presented
+        }
+
         if let nav = controller as? UINavigationController {
-            return topViewController(controller: nav.visibleViewController)
+            return nav.visibleViewController
         }
-        if let tab = controller as? UITabBarController, let selected = tab.selectedViewController {
-            return topViewController(controller: selected)
+
+        if let tab = controller as? UITabBarController {
+            return tab.selectedViewController ?? tab
         }
-        if let presented = controller?.presentedViewController {
-            return topViewController(controller: presented)
-        }
+
         return controller
     }
 }
