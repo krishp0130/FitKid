@@ -1,0 +1,23 @@
+# Build and DerivedData
+DerivedData/
+build/
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# Xcode user state
+*.xcuserstate
+*.xcuserdata/
+
+# Logs
+*.log
+
+# Multiple simulator build artifacts (adjust if paths differ)
+MultipleSimulatorsBuild-*/
+
+# Env / secrets (if any)
+*.env
+
+# macOS cruft
+.DS_Store

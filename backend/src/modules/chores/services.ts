@@ -1,4 +1,5 @@
 import { supabaseDb } from '../../config/supabase.js'
+import { createTransactionWithPostings, ensureWalletAndIncomeAccounts } from '../ledger/service.js'
 import type { DbChore, ChoreStatus } from './types.js'
 
 export async function fetchChoresForUser(userId: string, role: 'PARENT' | 'CHILD', familyId?: string): Promise<DbChore[]> {
@@ -106,76 +107,15 @@ export async function updateChoreStatus(id: string, status: ChoreStatus): Promis
 }
 
 export async function addRewardToWallet(userId: string, rewardCents: number): Promise<void> {
-  // Try to update wallet balance using ledger_accounts system
-  // First, find or create a "Wallet" account for this user
-  const { data: walletAccount, error: accountError } = await supabaseDb
-    .from('ledger_accounts')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('name', 'Wallet')
-    .eq('type', 'ASSET')
-    .maybeSingle()
-
-  if (accountError) {
-    console.error('Error finding wallet account:', accountError.message)
-    throw new Error(`Failed to find wallet account: ${accountError.message}`)
-  }
-
-  let walletAccountId: string
-
-  if (!walletAccount) {
-    // Create wallet account if it doesn't exist
-    const { data: newAccount, error: createError } = await supabaseDb
-      .from('ledger_accounts')
-      .insert({
-        user_id: userId,
-        name: 'Wallet',
-        type: 'ASSET'
-      })
-      .select('id')
-      .single()
-
-    if (createError || !newAccount) {
-      console.error('Error creating wallet account:', createError?.message)
-      throw new Error(`Failed to create wallet account: ${createError?.message}`)
-    }
-
-    walletAccountId = newAccount.id
-  } else {
-    walletAccountId = walletAccount.id
-  }
-
-  // Create a transaction for the reward
-  const { data: transaction, error: txError } = await supabaseDb
-    .from('transactions')
-    .insert({
-      description: `Chore reward: ${rewardCents / 100} dollars`,
-      status: 'CLEARED',
-      metadata: { source: 'chore_reward' }
-    })
-    .select('id')
-    .single()
-
-  if (txError || !transaction) {
-    console.error('Error creating reward transaction:', txError?.message)
-    throw new Error(`Failed to create transaction: ${txError?.message}`)
-  }
-
-  // Create posting to credit the wallet (positive amount = debit to asset account)
-  const { error: postingError } = await supabaseDb
-    .from('postings')
-    .insert({
-      transaction_id: transaction.id,
-      account_id: walletAccountId,
-      amount: rewardCents // Positive amount = debit to asset = increase balance
-    })
-
-  if (postingError) {
-    console.error('Error creating wallet posting:', postingError.message)
-    throw new Error(`Failed to credit wallet: ${postingError.message}`)
-  }
-
-  console.log(`Successfully added ${rewardCents} cents ($${(rewardCents / 100).toFixed(2)}) to wallet for user ${userId}`)
+  const { walletId, incomeId } = await ensureWalletAndIncomeAccounts(userId)
+  await createTransactionWithPostings({
+    description: 'Chore reward',
+    postings: [
+      { account_id: walletId, amount: rewardCents }, // debit asset (increase)
+      { account_id: incomeId, amount: -rewardCents } // credit revenue
+    ],
+    metadata: { source: 'chore_reward' }
+  })
 }
 
 export async function fetchChore(id: string): Promise<DbChore | null> {

@@ -13,6 +13,7 @@ import {
   rejectChoreController,
   listPresetsController
 } from '../chores/controllers.js'
+import { walletBalanceController } from '../ledger/controller.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
@@ -47,4 +48,8 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/chores/:id/submit', submitChoreController)
   app.post('/api/auth/chores/:id/approve', approveChoreController)
   app.post('/api/auth/chores/:id/reject', rejectChoreController)
+
+  // Wallet
+  app.get('/api/wallet', walletBalanceController)
+  app.get('/api/auth/wallet', walletBalanceController)
 }

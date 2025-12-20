@@ -80,7 +80,7 @@ struct ChoresView: View {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        await appState.fetchChores(accessToken: token)
+        await appState.fetchChores(accessToken: token, force: force)
         if let err = appState.choreError {
             errorMessage = err
         }

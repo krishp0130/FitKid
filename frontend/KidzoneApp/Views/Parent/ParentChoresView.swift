@@ -9,7 +9,6 @@ struct ParentChoresView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
-    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -77,40 +76,15 @@ struct ParentChoresView: View {
             .task {
                 await loadChores()
             }
-            .onAppear {
-                // Start auto-refresh timer (every 2 seconds)
-                startAutoRefresh()
-            }
-            .onDisappear {
-                // Stop timer when view disappears
-                stopAutoRefresh()
-            }
         }
     }
     
-    private func startAutoRefresh() {
-        // Stop existing timer if any
-        stopAutoRefresh()
-        
-        // Create new timer that fires every 2 seconds
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            Task {
-                await loadChores()
-            }
-        }
-    }
-    
-    private func stopAutoRefresh() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
-    }
-
     private func loadChores() async {
         guard let token = authManager.session?.accessToken else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        await appState.fetchChores(accessToken: token)
+        await appState.fetchChores(accessToken: token, force: false)
         if let err = appState.choreError {
             errorMessage = err
         }
@@ -286,6 +260,7 @@ struct AddChoreView: View {
     @State private var assigneeId: String = ""
     @State private var children: [User] = []
     @State private var isLoadingChildren = false
+    @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var showPresets = false
     @State private var presets: [ChorePreset] = []
@@ -430,10 +405,21 @@ struct AddChoreView: View {
                     }
 
                     Section {
-                        Button("Create Chore") {
+                        Button {
                             Task { await create() }
+                        } label: {
+                            if isSubmitting {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                    Spacer()
+                                }
+                            } else {
+                                Text("Create Chore")
+                            }
                         }
                         .foregroundStyle(AppTheme.Parent.primary)
+                        .disabled(isSubmitting)
                     }
                 }
             }
@@ -489,6 +475,7 @@ struct AddChoreView: View {
 
     private func create() async {
         guard let token = authManager.session?.accessToken else { return }
+        if isSubmitting { return }
         if assigneeId.isEmpty {
             await MainActor.run { errorMessage = "Please select a child" }
             return
@@ -498,6 +485,7 @@ struct AddChoreView: View {
             await MainActor.run { errorMessage = "Invalid reward amount" }
             return
         }
+        isSubmitting = true
         do {
             let descValue = description.trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -526,6 +514,7 @@ struct AddChoreView: View {
         } catch {
             await MainActor.run { errorMessage = error.localizedDescription }
         }
+        isSubmitting = false
     }
 
     private func loadChildren() async {

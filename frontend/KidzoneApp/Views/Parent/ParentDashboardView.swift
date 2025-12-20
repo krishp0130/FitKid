@@ -7,7 +7,7 @@ struct ParentDashboardView: View {
     @State private var familyMembers: [User] = []
     @State private var isLoadingMembers = false
     @State private var memberError: String?
-    @State private var refreshTimer: Timer?
+    @State private var lastFamilyFetch: Date?
     
     var body: some View {
         NavigationView {
@@ -38,58 +38,32 @@ struct ParentDashboardView: View {
                     .padding(AppTheme.Parent.screenPadding)
                 }
                 .refreshable {
-                    await refreshDashboard()
+                    await refreshDashboard(force: true, showLoading: true)
                 }
             }
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
             .task {
-                await refreshDashboard()
+                await refreshDashboard(force: false, showLoading: true)
             }
             .onAppear {
-                // Refresh when switching back to dashboard tab
                 Task {
-                    await refreshDashboard()
+                    await refreshDashboard(force: false, showLoading: false)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: AuthenticationManager.onboardingCompletedNotification)) { _ in
-                Task { await refreshDashboard() }
+                Task { await refreshDashboard(force: true, showLoading: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshDashboard"))) { _ in
-                Task { await refreshDashboard() }
+                Task { await refreshDashboard(force: true, showLoading: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreCreated"))) { _ in
-                Task { await refreshDashboard() }
+                Task { await refreshDashboard(force: true, showLoading: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
-                Task { await refreshDashboard() }
-            }
-            .onAppear {
-                // Start auto-refresh timer (every 2 seconds)
-                startAutoRefresh()
-            }
-            .onDisappear {
-                // Stop timer when view disappears
-                stopAutoRefresh()
+                Task { await refreshDashboard(force: true, showLoading: false) }
             }
         }
-    }
-    
-    private func startAutoRefresh() {
-        // Stop existing timer if any
-        stopAutoRefresh()
-        
-        // Create new timer that fires every 2 seconds
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            Task {
-                await refreshDashboard()
-            }
-        }
-    }
-    
-    private func stopAutoRefresh() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
     }
 
     private var headerSection: some View {
@@ -204,13 +178,11 @@ struct ParentDashboardView: View {
 
                 Spacer()
 
-                let pendingCount = appState.state.chores.filter { $0.status == .pendingApproval }.count
-                Text("\(pendingCount)")
+                Text("\(pendingChores.count)")
                     .font(AppTheme.Parent.titleFont.weight(.bold))
                     .foregroundStyle(AppTheme.Parent.warning)
             }
 
-            let pendingChores = appState.state.chores.filter { $0.status == .pendingApproval }
             ForEach(pendingChores) { chore in
                 PendingChoreRow(chore: chore, onDecision: { action in
                     Task {
@@ -223,7 +195,7 @@ struct ParentDashboardView: View {
                                 try await appState.rejectChore(accessToken: token, choreId: chore.id)
                             }
                             // Refresh dashboard after decision
-                            await refreshDashboard()
+                            await refreshDashboard(force: true, showLoading: false)
                         } catch {
                             print("Error handling chore decision: \(error)")
                         }
@@ -283,27 +255,32 @@ struct ParentDashboardView: View {
     }
 
     // MARK: - Data
-    private func refreshDashboard() async {
+    private func refreshDashboard(force: Bool, showLoading: Bool) async {
         guard let token = authManager.session?.accessToken else { return }
         
         // Refresh both family members and chores in parallel
-        async let membersTask = loadFamilyMembers(force: true)
-        async let choresTask = appState.fetchChores(accessToken: token)
+        async let membersTask = loadFamilyMembers(force: force, showLoading: showLoading)
+        async let choresTask = appState.fetchChores(accessToken: token, force: force)
         
         await membersTask
         await choresTask
     }
     
-    private func loadFamilyMembers(force: Bool = false) async {
+    private func loadFamilyMembers(force: Bool = false, showLoading: Bool = true) async {
         guard let token = authManager.session?.accessToken else { return }
+        let freshnessWindow: TimeInterval = 10
+        if !force, let last = lastFamilyFetch, Date().timeIntervalSince(last) < freshnessWindow {
+            return
+        }
         if isLoadingMembers && !force { return }
-        isLoadingMembers = true
+        if showLoading { isLoadingMembers = true }
         memberError = nil
-        defer { isLoadingMembers = false }
+        defer { if showLoading { isLoadingMembers = false } }
         do {
             let members = try await AuthAPI.shared.fetchFamilyMembers(accessToken: token)
             await MainActor.run {
                 self.familyMembers = members
+                self.lastFamilyFetch = Date()
             }
         } catch is CancellationError {
             // ignore pull-to-refresh cancellations
@@ -314,6 +291,12 @@ struct ParentDashboardView: View {
                 self.memberError = error.localizedDescription
             }
         }
+    }
+}
+
+private extension ParentDashboardView {
+    var pendingChores: [Chore] {
+        appState.state.chores.filter { $0.status == .pendingApproval }
     }
 }
 
