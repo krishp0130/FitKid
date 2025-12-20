@@ -65,13 +65,22 @@ final class AuthAPI {
             case 200:
                 do {
                     return try decoder.decode(AuthSessionResponse.self, from: data)
-                } catch {
-                    throw AuthAPIError.decoding(error)
+                } catch let decodingError {
+                    // Log the actual response for debugging
+                    let responseString = String(data: data, encoding: .utf8) ?? "Unable to convert response to string"
+                    print("❌ Failed to decode Apple response: \(decodingError)")
+                    print("📄 Response body: \(responseString)")
+                    throw AuthAPIError.server("Invalid response format: \(responseString)")
                 }
             case 401:
+                // Try to extract the actual error message from the response
+                if let errorMessage = String(data: data, encoding: .utf8), !errorMessage.isEmpty {
+                    throw AuthAPIError.server(errorMessage)
+                }
                 throw AuthAPIError.unauthorized
             default:
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                print("❌ Unexpected status code \(httpResponse.statusCode): \(message)")
                 throw AuthAPIError.server(message)
             }
         } catch {
@@ -101,13 +110,22 @@ final class AuthAPI {
             case 200:
                 do {
                     return try decoder.decode(AuthSessionResponse.self, from: data)
-                } catch {
-                    throw AuthAPIError.decoding(error)
+                } catch let decodingError {
+                    // Log the actual response for debugging
+                    let responseString = String(data: data, encoding: .utf8) ?? "Unable to convert response to string"
+                    print("❌ Failed to decode Google response: \(decodingError)")
+                    print("📄 Response body: \(responseString)")
+                    print("📄 Status code: \(httpResponse.statusCode)")
+                    throw AuthAPIError.server("Invalid response format: \(responseString)")
                 }
             case 401:
-                throw AuthAPIError.unauthorized
+                // Try to extract the actual error message from the response
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unauthorized"
+                print("❌ 401 Unauthorized: \(errorMessage)")
+                throw AuthAPIError.server(errorMessage)
             default:
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                print("❌ Unexpected status code \(httpResponse.statusCode): \(message)")
                 throw AuthAPIError.server(message)
             }
         } catch {

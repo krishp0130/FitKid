@@ -22,8 +22,9 @@ export async function googleSignInController(request: FastifyRequest, reply: Fas
   })
 
   if (error || !data.session || !data.user) {
-    request.log.error({ error }, 'Google token exchange failed')
-    return reply.unauthorized('Invalid Google credentials')
+    request.log.error({ error, data }, 'Google token exchange failed')
+    const errorMessage = error?.message ?? 'Invalid Google credentials'
+    return reply.unauthorized(`Google authentication failed: ${errorMessage}`)
   }
 
   const dbUser = await fetchUserRecord(data.user.id)

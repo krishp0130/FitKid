@@ -4,6 +4,8 @@ struct ParentChoresView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var showAddChore = false
+    @State private var showEditChore = false
+    @State private var selectedChoreForEdit: Chore?
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
@@ -35,6 +37,9 @@ struct ParentChoresView: View {
                         ForEach(filteredChores) { chore in
                             ParentChoreCard(chore: chore, onDecision: { action in
                                 Task { await handleDecision(chore: chore, action: action) }
+                            }, onEdit: {
+                                showEditChore = true
+                                selectedChoreForEdit = chore
                             })
                         }
 
@@ -62,6 +67,11 @@ struct ParentChoresView: View {
             }
             .sheet(isPresented: $showAddChore) {
                 AddChoreView()
+            }
+            .sheet(item: $selectedChoreForEdit) { chore in
+                // TODO: Add EditChoreView.swift to Xcode project's compile sources
+                // EditChoreView(chore: chore)
+                Text("Edit: \(chore.title)") // Temporary placeholder
             }
             .task {
                 await loadChores()
@@ -109,21 +119,45 @@ struct ParentChoresView: View {
 struct ParentChoreCard: View {
     let chore: Chore
     var onDecision: ((ApprovalAction) -> Void)?
+    var onEdit: (() -> Void)?
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
-                Text(chore.title)
-                    .font(AppTheme.Parent.headlineFont)
-                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                HStack {
+                    Text(chore.title)
+                        .font(AppTheme.Parent.headlineFont)
+                        .foregroundStyle(AppTheme.Parent.textPrimary)
+                    
+                    if chore.isRecurring {
+                        Text(chore.recurrenceLabel)
+                            .font(AppTheme.Parent.captionFont)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color.parentAccent.opacity(0.2))
+                            )
+                            .foregroundStyle(Color.parentAccent)
+                    }
+                }
 
                 Text(chore.detail)
                     .font(AppTheme.Parent.bodyFont)
                     .foregroundStyle(AppTheme.Parent.textSecondary)
+                    .lineLimit(2)
 
-                Text("Reward: \(chore.rewardFormatted)")
-                    .font(AppTheme.Parent.captionFont)
-                    .foregroundStyle(AppTheme.Parent.success)
+                HStack {
+                    Text("Reward: \(chore.rewardFormatted)")
+                        .font(AppTheme.Parent.captionFont)
+                        .foregroundStyle(AppTheme.Parent.success)
+                    
+                    if let assigneeName = chore.assigneeName {
+                        Text("• \(assigneeName)")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                }
             }
 
             Spacer()
@@ -158,6 +192,13 @@ struct ParentChoreCard: View {
                                 .foregroundStyle(AppTheme.Parent.danger)
                         }
                     }
+                } else if chore.status == .assigned {
+                    Button {
+                        onEdit?()
+                    } label: {
+                        Image(systemName: "pencil.circle.fill")
+                            .foregroundStyle(AppTheme.Parent.primary)
+                    }
                 }
             }
         }
@@ -180,11 +221,17 @@ struct AddChoreView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var reward = ""
-    @State private var dueDate = ""
+    @State private var dueDate: Date? = nil
+    @State private var hasDueDate = false
     @State private var assigneeId: String = ""
     @State private var children: [User] = []
     @State private var isLoadingChildren = false
     @State private var errorMessage: String?
+    @State private var showPresets = false
+    @State private var presets: [ChorePreset] = []
+    @State private var isLoadingPresets = false
+    @State private var selectedPreset: ChorePreset?
+    @State private var recurrenceType: String = "NONE"
 
     var body: some View {
         NavigationView {
@@ -193,6 +240,21 @@ struct AddChoreView: View {
                     .ignoresSafeArea()
 
                 Form {
+                    Section("Quick Start") {
+                        Button(action: {
+                            showPresets.toggle()
+                            Task { await loadPresets() }
+                        }) {
+                            HStack {
+                                Image(systemName: "sparkles")
+                                Text("Use Preset")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                            .foregroundStyle(AppTheme.Parent.primary)
+                        }
+                    }
+                    
                     Section("Assign to") {
                         if isLoadingChildren {
                             ProgressView()
@@ -208,14 +270,96 @@ struct AddChoreView: View {
                         }
                     }
 
-                    Section("Chore Details") {
+                    Section {
                         TextField("Title", text: $title)
                         TextEditor(text: $description)
                             .frame(minHeight: 80)
                         TextField("Reward ($)", text: $reward)
                             .keyboardType(.decimalPad)
-                        TextField("Due date (optional)", text: $dueDate)
-                            .textInputAutocapitalization(.never)
+                    } header: {
+                        Text("Chore Details")
+                    }
+                    
+                    Section {
+                        Picker("Frequency", selection: $recurrenceType) {
+                            Label("One-time", systemImage: "circle").tag("NONE")
+                            Label("Daily", systemImage: "sun.max").tag("DAILY")
+                            Label("Weekly", systemImage: "calendar").tag("WEEKLY")
+                            Label("Monthly", systemImage: "calendar.badge.clock").tag("MONTHLY")
+                        }
+                        .pickerStyle(.menu)
+                    } header: {
+                        Text("Recurrence")
+                    } footer: {
+                        if recurrenceType != "NONE" {
+                            Text("This chore will repeat \(recurrenceType.lowercased()).")
+                        }
+                    }
+                    
+                    Section {
+                        Toggle("Set Due Date", isOn: $hasDueDate)
+                        
+                        if hasDueDate {
+                            DatePicker(
+                                "Due Date & Time",
+                                selection: Binding(
+                                    get: { 
+                                        dueDate ?? Date().addingTimeInterval(86400)
+                                    },
+                                    set: { newDate in
+                                        dueDate = newDate
+                                    }
+                                ),
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.graphical)
+                            .padding(.vertical, 8)
+                        }
+                    } header: {
+                        Text("Due Date")
+                    } footer: {
+                        if hasDueDate {
+                            Text("The chore should be completed by this date and time.")
+                        }
+                    }
+                    
+                    if showPresets {
+                        Section("Presets") {
+                            if isLoadingPresets {
+                                ProgressView()
+                            } else {
+                                ForEach(Array(presets)) { preset in
+                                    Button(action: {
+                                        applyPreset(preset)
+                                    }) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack {
+                                                Text(preset.title)
+                                                    .font(AppTheme.Parent.headlineFont)
+                                                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                                                Spacer()
+                                                Text(preset.rewardFormatted)
+                                                    .font(AppTheme.Parent.headlineFont)
+                                                    .foregroundStyle(AppTheme.Parent.success)
+                                            }
+                                            Text(preset.description)
+                                                .font(AppTheme.Parent.captionFont)
+                                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                                            Text(preset.recurrenceLabel)
+                                                .font(AppTheme.Parent.captionFont)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 2)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(Color.parentAccent.opacity(0.2))
+                                                )
+                                                .foregroundStyle(Color.parentAccent)
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     if let errorMessage {
@@ -248,6 +392,40 @@ struct AddChoreView: View {
             }
         }
     }
+    
+    private func loadPresets() async {
+        guard let token = authManager.session?.accessToken else { return }
+        if isLoadingPresets { return }
+        isLoadingPresets = true
+        defer { isLoadingPresets = false }
+        do {
+            let fetchedPresets = try await appState.fetchPresets(accessToken: token)
+            await MainActor.run {
+                self.presets = fetchedPresets
+            }
+        } catch {
+            // Presets are optional, don't show error
+            print("Failed to load presets: \(error)")
+        }
+    }
+    
+    private func applyPreset(_ preset: ChorePreset) {
+        title = preset.title
+        description = preset.description
+        reward = String(format: "%.2f", preset.rewardDollars)
+        recurrenceType = preset.recurrenceType
+        // Set due date based on recurrence type
+        if let suggestedDay = preset.suggestedDueDay {
+            let calendar = Calendar.current
+            var dateComponents = calendar.dateComponents([.year, .month, .weekday], from: Date())
+            dateComponents.weekday = suggestedDay + 1 // Adjust for weekday index
+            if let nextDate = calendar.nextDate(after: Date(), matching: dateComponents, matchingPolicy: .nextTime) {
+                dueDate = nextDate
+                hasDueDate = true
+            }
+        }
+        showPresets = false
+    }
 
     private func create() async {
         guard let token = authManager.session?.accessToken else { return }
@@ -261,15 +439,26 @@ struct AddChoreView: View {
             return
         }
         do {
-            let dueDateValue = dueDate.trimmingCharacters(in: .whitespacesAndNewlines)
             let descValue = description.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Format due date to ISO 8601 string if set
+            let dueDateISO: String?
+            if hasDueDate, let dueDate = dueDate {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                dueDateISO = formatter.string(from: dueDate)
+            } else {
+                dueDateISO = nil
+            }
+            
             try await appState.createChore(
                 accessToken: token,
                 assigneeId: assigneeId,
                 title: title,
                 detail: descValue,
                 rewardDollars: rewardValue,
-                dueDateISO: dueDateValue.isEmpty ? nil : dueDateValue
+                dueDateISO: dueDateISO,
+                recurrenceType: recurrenceType == "NONE" ? nil : recurrenceType
             )
             await MainActor.run { dismiss() }
         } catch {

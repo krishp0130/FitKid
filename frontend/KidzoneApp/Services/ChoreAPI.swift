@@ -47,19 +47,20 @@ final class ChoreAPI {
         }
     }
 
-    func createChore(accessToken: String, assigneeId: String, title: String, detail: String, rewardDollars: Double, dueDateISO: String?) async throws -> Chore {
+    func createChore(accessToken: String, assigneeId: String, title: String, detail: String, rewardDollars: Double, dueDateISO: String?, recurrenceType: String?) async throws -> Chore {
         guard let url = URL(string: baseURLString) else { throw ChoreAPIError.invalidURL }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "assigneeId": assigneeId,
             "title": title,
             "description": detail,
-            "reward": rewardDollars,
-            "dueDate": dueDateISO as Any
-        ].compactMapValues { $0 }
+            "reward": rewardDollars
+        ]
+        if let dueDateISO = dueDateISO { body["dueDate"] = dueDateISO }
+        if let recurrenceType = recurrenceType { body["recurrenceType"] = recurrenceType }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ChoreAPIError.invalidURL }
@@ -97,6 +98,52 @@ final class ChoreAPI {
         case 200:
             struct Wrapper: Codable { let chore: Chore }
             do { return try decoder.decode(Wrapper.self, from: data).chore } catch { throw ChoreAPIError.decoding(error) }
+        case 401: throw ChoreAPIError.unauthorized
+        default:
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw ChoreAPIError.server(msg)
+        }
+    }
+
+    func updateChore(accessToken: String, choreId: String, title: String?, detail: String?, rewardDollars: Double?, dueDateISO: String?, recurrenceType: String?) async throws -> Chore {
+        guard let url = URL(string: "\(baseURLString)/\(choreId)") else { throw ChoreAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        
+        var body: [String: Any] = [:]
+        if let title = title { body["title"] = title }
+        if let detail = detail { body["description"] = detail }
+        if let rewardDollars = rewardDollars { body["reward"] = rewardDollars }
+        if let dueDateISO = dueDateISO { body["dueDate"] = dueDateISO }
+        if let recurrenceType = recurrenceType { body["recurrenceType"] = recurrenceType }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ChoreAPIError.invalidURL }
+        switch http.statusCode {
+        case 200:
+            struct Wrapper: Codable { let chore: Chore }
+            do { return try decoder.decode(Wrapper.self, from: data).chore } catch { throw ChoreAPIError.decoding(error) }
+        case 401: throw ChoreAPIError.unauthorized
+        default:
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw ChoreAPIError.server(msg)
+        }
+    }
+
+    func fetchPresets(accessToken: String) async throws -> [ChorePreset] {
+        guard let url = URL(string: "\(baseURLString)/presets") else { throw ChoreAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ChoreAPIError.invalidURL }
+        switch http.statusCode {
+        case 200:
+            struct Wrapper: Codable { let presets: [ChorePreset] }
+            do { return try decoder.decode(Wrapper.self, from: data).presets } catch { throw ChoreAPIError.decoding(error) }
         case 401: throw ChoreAPIError.unauthorized
         default:
             let msg = String(data: data, encoding: .utf8) ?? "Unknown error"

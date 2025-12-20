@@ -28,8 +28,24 @@ struct Chore: Identifiable, Codable {
     var assigneeId: String?
     var assigneeName: String?
     var dueDate: String?
+    var recurrenceType: String?
+    var recurrenceConfig: String?
 
     var rewardFormatted: String { reward.asCurrency }
+    
+    var isRecurring: Bool {
+        guard let recurrenceType = recurrenceType else { return false }
+        return recurrenceType != "NONE" && !recurrenceType.isEmpty
+    }
+    
+    var recurrenceLabel: String {
+        switch recurrenceType {
+        case "DAILY": return "Daily"
+        case "WEEKLY": return "Weekly"
+        case "MONTHLY": return "Monthly"
+        default: return "One-time"
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -41,9 +57,11 @@ struct Chore: Identifiable, Codable {
         case assigneeId
         case assigneeName
         case dueDate
+        case recurrenceType
+        case recurrenceConfig
     }
 
-    init(id: String, title: String, detail: String, reward: Double, status: ChoreStatus, assigneeId: String?, assigneeName: String?, dueDate: String?) {
+    init(id: String, title: String, detail: String, reward: Double, status: ChoreStatus, assigneeId: String?, assigneeName: String?, dueDate: String?, recurrenceType: String? = nil, recurrenceConfig: String? = nil) {
         self.id = id
         self.title = title
         self.detail = detail
@@ -52,6 +70,8 @@ struct Chore: Identifiable, Codable {
         self.assigneeId = assigneeId
         self.assigneeName = assigneeName
         self.dueDate = dueDate
+        self.recurrenceType = recurrenceType
+        self.recurrenceConfig = recurrenceConfig
     }
 
     init(from decoder: Decoder) throws {
@@ -75,6 +95,8 @@ struct Chore: Identifiable, Codable {
         self.assigneeId = try? container.decode(String.self, forKey: .assigneeId)
         self.assigneeName = try? container.decode(String.self, forKey: .assigneeName)
         self.dueDate = try? container.decode(String.self, forKey: .dueDate)
+        self.recurrenceType = try? container.decode(String.self, forKey: .recurrenceType)
+        self.recurrenceConfig = try? container.decode(String.self, forKey: .recurrenceConfig)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -87,6 +109,8 @@ struct Chore: Identifiable, Codable {
         try container.encodeIfPresent(assigneeId, forKey: .assigneeId)
         try container.encodeIfPresent(assigneeName, forKey: .assigneeName)
         try container.encodeIfPresent(dueDate, forKey: .dueDate)
+        try container.encodeIfPresent(recurrenceType, forKey: .recurrenceType)
+        try container.encodeIfPresent(recurrenceConfig, forKey: .recurrenceConfig)
     }
 }
 
@@ -99,58 +123,75 @@ enum ChoreStatus: String, Codable {
     var label: String {
         switch self {
         case .assigned: return "Assigned"
-        case .pendingApproval: return "Pending Approval"
+        case .pendingApproval: return "Pending"
         case .completed: return "Completed"
         case .rejected: return "Rejected"
         }
-    }
-
-    var isPendingAction: Bool {
-        self == .assigned || self == .pendingApproval
     }
 }
 
 enum ChoreSegment: String, CaseIterable, Identifiable {
     case active
     case completed
+
     var id: String { rawValue }
 }
 
-struct MarketplaceItem: Identifiable {
-    var id = UUID()
-    var name: String
-    var priceCents: Int
-    var tagline: String
-    var description: String
-    var isDigital: Bool
+struct ChorePreset: Identifiable, Codable {
+    let id: String
+    let title: String
+    let description: String
+    let rewardDollars: Double
+    let recurrenceType: String
+    let suggestedDueDay: Int?
+    
+    var rewardFormatted: String { rewardDollars.asCurrency }
+    
+    var recurrenceLabel: String {
+        switch recurrenceType {
+        case "DAILY": return "Daily"
+        case "WEEKLY": return "Weekly"
+        case "MONTHLY": return "Monthly"
+        default: return "One-time"
+        }
+    }
+}
 
+struct MarketplaceItem: Identifiable, Codable {
+    let id = UUID()
+    let name: String
+    let priceCents: Int
+    let tagline: String
+    let description: String
+    let isDigital: Bool
+    
     var priceFormatted: String { priceCents.asCurrency }
 }
 
-struct Stock: Identifiable {
-    var id = UUID()
-    var ticker: String
-    var company: String
-    var value: Double
-    var change: Double
-
-    var valueFormatted: String { "$\(String(format: "%.2f", value))" }
-    var changeText: String { "\(change >= 0 ? "+" : "")\(String(format: "%.1f", change))%" }
+struct Stock: Identifiable, Codable {
+    let id = UUID()
+    let ticker: String
+    let company: String
+    let value: Double
+    let change: Double
+    
+    var valueFormatted: String { value.asCurrency }
+    var changeFormatted: String {
+        let sign = change >= 0 ? "+" : ""
+        return "\(sign)\(String(format: "%.2f", change))"
+    }
+    var changePercent: String {
+        let percent = (change / value) * 100
+        let sign = percent >= 0 ? "+" : ""
+        return "\(sign)\(String(format: "%.1f", percent))%"
+    }
 }
 
-struct ParentSettings {
-    var salesTax: Double
-    var penaltyPoints: Int
-    var graceDays: Int
-    var cashbackBonus: Double
-    var deviceMinimumScore: Int
-    var dailyHourCap: Int
-}
-
-struct FamilyMember: Identifiable {
-    let id: String
-    var username: String
-    var email: String?
-    var role: UserRole
-    var currentCreditScore: Int
+struct ParentSettings: Codable {
+    let salesTax: Double
+    let penaltyPoints: Int
+    let graceDays: Int
+    let cashbackBonus: Double
+    let deviceMinimumScore: Int
+    let dailyHourCap: Int
 }

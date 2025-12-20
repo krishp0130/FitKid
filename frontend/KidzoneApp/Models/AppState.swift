@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct AppState {
     var creditScore: Int
@@ -12,8 +13,14 @@ struct AppState {
     var parentSettings: ParentSettings
     var walletBalanceCents: Int
 
-    var creditLineFormatted: String { creditLineCents.asCurrency }
-    var walletBalanceFormatted: String { walletBalanceCents.asCurrency }
+    var creditLineFormatted: String { 
+        let dollars = Double(creditLineCents) / 100.0
+        return String(format: "$%.2f", dollars)
+    }
+    var walletBalanceFormatted: String { 
+        let dollars = Double(walletBalanceCents) / 100.0
+        return String(format: "$%.2f", dollars)
+    }
     
     var utilization: String {
         let ratio = Double(balanceCents) / Double(max(creditLineCents, 1))
@@ -29,26 +36,26 @@ struct AppState {
     static let mock = AppState(
         creditScore: 712,
         cards: [
-            .init(company: "Galaxy Bank", productName: "Starter Orbit", tierLabel: "Tier 1", tierIcon: "sparkles", limitCents: 40000, apr: 0.199, rewards: 0.0, balanceCents: 9000, gradient: [.spacePurple, .nightBlue]),
-            .init(company: "Future Finance", productName: "Reward Beam", tierLabel: "Tier 2", tierIcon: "arrow.triangle.branch", limitCents: 90000, apr: 0.129, rewards: 0.03, balanceCents: 18000, gradient: [.skyBlue, .emerald]),
-            .init(company: "Nova Credit", productName: "Elite Nebula", tierLabel: "Tier 3", tierIcon: "crown.fill", limitCents: 150000, apr: 0.079, rewards: 0.05, balanceCents: 0, gradient: [.sunrise, .purple])
+            CreditCardInstance(company: "Galaxy Bank", productName: "Starter Orbit", tierLabel: "Tier 1", tierIcon: "sparkles", limitCents: 40000, apr: 0.199, rewards: 0.0, balanceCents: 9000, gradient: [Color.purple, Color.blue]),
+            CreditCardInstance(company: "Future Finance", productName: "Reward Beam", tierLabel: "Tier 2", tierIcon: "arrow.triangle.branch", limitCents: 90000, apr: 0.129, rewards: 0.03, balanceCents: 18000, gradient: [Color.blue, Color.green]),
+            CreditCardInstance(company: "Nova Credit", productName: "Elite Nebula", tierLabel: "Tier 3", tierIcon: "crown.fill", limitCents: 150000, apr: 0.079, rewards: 0.05, balanceCents: 0, gradient: [Color.orange, Color.purple])
         ],
         chores: [],
         marketItems: [
-            .init(name: "30m Device Hours", priceCents: 900, tagline: "Digital", description: "Unlock half an hour of games.", isDigital: true),
-            .init(name: "Movie Night", priceCents: 2400, tagline: "Experience", description: "Pick one streaming movie.", isDigital: false),
-            .init(name: "Lego Set", priceCents: 5200, tagline: "Physical", description: "Parent-approved pickup", isDigital: false),
-            .init(name: "VIP Paper Trade", priceCents: 3000, tagline: "Premium", description: "Unlock big-ticket stocks instantly.", isDigital: true)
+            MarketplaceItem(name: "30m Device Hours", priceCents: 900, tagline: "Digital", description: "Unlock half an hour of games.", isDigital: true),
+            MarketplaceItem(name: "Movie Night", priceCents: 2400, tagline: "Experience", description: "Pick one streaming movie.", isDigital: false),
+            MarketplaceItem(name: "Lego Set", priceCents: 5200, tagline: "Physical", description: "Parent-approved pickup", isDigital: false),
+            MarketplaceItem(name: "VIP Paper Trade", priceCents: 3000, tagline: "Premium", description: "Unlock big-ticket stocks instantly.", isDigital: true)
         ],
         stocks: [
-            .init(ticker: "KIDZ", company: "Kidzone Index", value: 134.22, change: 2.3),
-            .init(ticker: "GROW", company: "Growth Labs", value: 58.11, change: -1.8),
-            .init(ticker: "STEM", company: "STEM Heroes", value: 92.40, change: 0.7)
+            Stock(ticker: "KIDZ", company: "Kidzone Index", value: 134.22, change: 2.3),
+            Stock(ticker: "GROW", company: "Growth Labs", value: 58.11, change: -1.8),
+            Stock(ticker: "STEM", company: "STEM Heroes", value: 92.40, change: 0.7)
         ],
         deviceHours: 2.5,
         creditLineCents: 90000,
         balanceCents: 18000,
-        parentSettings: .init(salesTax: 0.08, penaltyPoints: 25, graceDays: 3, cashbackBonus: 0.02, deviceMinimumScore: 650, dailyHourCap: 3),
+        parentSettings: ParentSettings(salesTax: 0.08, penaltyPoints: 25, graceDays: 3, cashbackBonus: 0.02, deviceMinimumScore: 650, dailyHourCap: 3),
         walletBalanceCents: 5000
     )
 }

@@ -48,6 +48,7 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Google
     func signInWithGoogle() async throws -> User {
         guard let googleSignInService = googleSignInService else {
+            print("❌ Google Sign-In service not initialized")
             throw AuthError.invalidCredentials
         }
 
@@ -55,10 +56,18 @@ class AuthenticationManager: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
+        print("🔄 Getting Google ID token...")
         let googleResult = try await googleSignInService.signIn()
+        print("✅ Got Google ID token, exchanging with backend...")
+        
         let response = try await authAPI.exchangeGoogleToken(idToken: googleResult.idToken)
+        print("✅ Backend response received: status=\(response.status), user=\(response.user?.id ?? "nil")")
+        
         handleAuthResponse(response)
-        guard let user = response.user else { throw AuthError.invalidCredentials }
+        guard let user = response.user else {
+            print("❌ No user in response")
+            throw AuthError.invalidCredentials
+        }
         return user
     }
 
@@ -82,12 +91,25 @@ class AuthenticationManager: ObservableObject {
                 let user: User
                 switch provider {
                 case .google:
+                    print("🔄 Starting Google sign-in...")
                     user = try await signInWithGoogle()
+                    print("✅ Google sign-in successful")
                 case .apple:
+                    print("🔄 Starting Apple sign-in...")
                     user = try await signInWithApple()
+                    print("✅ Apple sign-in successful")
+                }
+                await MainActor.run {
+                    errorMessage = nil
                 }
                 completion(.success(user))
             } catch {
+                let errorMsg = error.localizedDescription
+                print("❌ Sign-in failed: \(errorMsg)")
+                print("❌ Error details: \(error)")
+                await MainActor.run {
+                    errorMessage = errorMsg
+                }
                 completion(.failure(error))
             }
         }
@@ -165,7 +187,7 @@ class AuthenticationManager: ObservableObject {
 
     // MARK: - Helpers
     private func handleAuthResponse(_ response: AuthSessionResponse) {
-        switch response.status {
+        switch response.effectiveStatus {
         case .existing:
             if let user = response.user {
                 currentUser = user

@@ -39,8 +39,8 @@ class AppStateViewModel: ObservableObject {
         }
     }
 
-    func createChore(accessToken: String, assigneeId: String, title: String, detail: String, rewardDollars: Double, dueDateISO: String?) async throws {
-        let chore = try await choreAPI.createChore(accessToken: accessToken, assigneeId: assigneeId, title: title, detail: detail, rewardDollars: rewardDollars, dueDateISO: dueDateISO)
+    func createChore(accessToken: String, assigneeId: String, title: String, detail: String, rewardDollars: Double, dueDateISO: String?, recurrenceType: String?) async throws {
+        let chore = try await choreAPI.createChore(accessToken: accessToken, assigneeId: assigneeId, title: title, detail: detail, rewardDollars: rewardDollars, dueDateISO: dueDateISO, recurrenceType: recurrenceType)
         await MainActor.run {
             self.state.chores.insert(chore, at: 0)
         }
@@ -71,6 +71,19 @@ class AppStateViewModel: ObservableObject {
                 self.state.chores[idx] = updated
             }
         }
+    }
+    
+    func updateChore(accessToken: String, choreId: String, title: String?, detail: String?, rewardDollars: Double?, dueDateISO: String?, recurrenceType: String?) async throws {
+        let updated = try await choreAPI.updateChore(accessToken: accessToken, choreId: choreId, title: title, detail: detail, rewardDollars: rewardDollars, dueDateISO: dueDateISO, recurrenceType: recurrenceType)
+        await MainActor.run {
+            if let idx = self.state.chores.firstIndex(where: { $0.id == choreId }) {
+                self.state.chores[idx] = updated
+            }
+        }
+    }
+    
+    func fetchPresets(accessToken: String) async throws -> [ChorePreset] {
+        return try await choreAPI.fetchPresets(accessToken: accessToken)
     }
     
     // MARK: - Future
