@@ -186,6 +186,95 @@ final class AuthAPI {
         }
     }
 
+    // Email/Password Authentication
+    func signInWithEmail(email: String, password: String) async throws -> AuthSessionResponse {
+        guard let url = URL(string: "\(authBaseURLString)/email") else {
+            throw AuthAPIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let payload = [
+            "email": email,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AuthAPIError.invalidResponse
+            }
+            
+            switch httpResponse.statusCode {
+            case 200:
+                do {
+                    return try decoder.decode(AuthSessionResponse.self, from: data)
+                } catch let decodingError {
+                    let responseString = String(data: data, encoding: .utf8) ?? "Unable to convert response to string"
+                    print("❌ Failed to decode email sign-in response: \(decodingError)")
+                    print("📄 Response body: \(responseString)")
+                    throw AuthAPIError.server("Invalid response format: \(responseString)")
+                }
+            case 401:
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Invalid email or password"
+                throw AuthAPIError.server(errorMessage)
+            default:
+                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw AuthAPIError.server(message)
+            }
+        } catch {
+            throw AuthAPIError.network(error)
+        }
+    }
+    
+    func signUpWithEmail(email: String, password: String) async throws -> AuthSessionResponse {
+        guard let url = URL(string: "\(authBaseURLString)/email/signup") else {
+            throw AuthAPIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let payload = [
+            "email": email,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AuthAPIError.invalidResponse
+            }
+            
+            switch httpResponse.statusCode {
+            case 200, 201:
+                do {
+                    return try decoder.decode(AuthSessionResponse.self, from: data)
+                } catch let decodingError {
+                    let responseString = String(data: data, encoding: .utf8) ?? "Unable to convert response to string"
+                    print("❌ Failed to decode email sign-up response: \(decodingError)")
+                    print("📄 Response body: \(responseString)")
+                    throw AuthAPIError.server("Invalid response format: \(responseString)")
+                }
+            case 400, 409:
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Email already exists or invalid data"
+                throw AuthAPIError.server(errorMessage)
+            default:
+                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw AuthAPIError.server(message)
+            }
+        } catch {
+            throw AuthAPIError.network(error)
+        }
+    }
+
     // Family members
     func fetchFamilyMembers(accessToken: String) async throws -> [User] {
         guard let url = URL(string: "\(authBaseURLString)/family/members") else {

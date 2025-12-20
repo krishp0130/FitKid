@@ -84,6 +84,33 @@ class AuthenticationManager: ObservableObject {
         return user
     }
 
+    // MARK: - Email/Password
+    func signInWithEmail(email: String, password: String) async throws -> User {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        
+        let response = try await authAPI.signInWithEmail(email: email, password: password)
+        handleAuthResponse(response)
+        guard let user = response.user else {
+            throw AuthError.invalidCredentials
+        }
+        return user
+    }
+    
+    func signUpWithEmail(email: String, password: String) async throws -> User {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        
+        let response = try await authAPI.signUpWithEmail(email: email, password: password)
+        handleAuthResponse(response)
+        guard let user = response.user else {
+            throw AuthError.invalidCredentials
+        }
+        return user
+    }
+    
     // MARK: - Entry point for UI
     func signIn(with provider: AuthProvider, completion: @escaping (Result<User, Error>) -> Void) {
         Task {
@@ -113,6 +140,12 @@ class AuthenticationManager: ObservableObject {
                 completion(.failure(error))
             }
         }
+    }
+    
+    func signUp(with provider: AuthProvider, completion: @escaping (Result<User, Error>) -> Void) {
+        // For OAuth providers, sign-up and sign-in are the same flow
+        // The backend will determine if it's a new user or existing user
+        signIn(with: provider, completion: completion)
     }
 
     func onboardParent(familyName: String, username: String, completion: @escaping (Result<User, Error>) -> Void) {

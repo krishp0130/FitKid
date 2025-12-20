@@ -10,9 +10,10 @@
     "@fastify/cors": "^8.4.1",
     "@fastify/sensible": "^5.4.1",
     "@supabase/supabase-js": "^2.45.3",
+    "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
-    "zod": "^3.22.4",
-    "dotenv": "^16.4.5"
+    "redis": "^5.10.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

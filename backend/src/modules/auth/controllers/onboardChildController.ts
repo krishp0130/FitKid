@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { getAuthUserFromBearer } from '../services/authUser.js'
 import { createChildUser, fetchUserRecord } from '../services/userService.js'
 import { mapUser } from '../responses.js'
+import { cacheService } from '../../../services/cacheService.js'
 
 const ChildOnboardBody = z.object({
   familyId: z.string().uuid(),
@@ -27,6 +28,10 @@ export async function onboardChildController(request: FastifyRequest, reply: Fas
 
   try {
     const newUser = await createChildUser(authUser, username, familyId)
+    
+    // Invalidate family members cache when a child joins
+    await cacheService.delete(cacheService.keys.familyMembers(familyId))
+    
     return reply.send({ user: mapUser(newUser) })
   } catch (err: any) {
     request.log.error({ err }, 'Failed to onboard child')

@@ -5,6 +5,7 @@ import { fetchUserRecord } from '../auth/services/userService.js'
 import { createChoreForChild, fetchChore, fetchChoresForUser, updateChoreStatus, updateChore, addRewardToWallet } from './services.js'
 import type { ChoreStatus } from './types.js'
 import { CHORE_PRESETS } from './presets.js'
+import { cacheService } from '../../services/cacheService.js'
 
 const CreateChoreBody = z.object({
   assigneeId: z.string().uuid(),
@@ -32,6 +33,15 @@ export async function listChoresController(request: FastifyRequest, reply: Fasti
     const caller = await fetchUserRecord(authUser.id)
     if (!caller) return reply.forbidden('User not onboarded')
 
+    // Try to get from cache first
+    const cacheKey = cacheService.keys.userChores(authUser.id)
+    const cached = await cacheService.get<any[]>(cacheKey)
+    
+    if (cached) {
+      return reply.send({ chores: cached })
+    }
+
+    // Cache miss - fetch from database
     const chores = await fetchChoresForUser(authUser.id, caller.role as any, caller.family_id)
     
     // For children, we need to handle assigneeName differently since it's not in the query result
@@ -40,6 +50,9 @@ export async function listChoresController(request: FastifyRequest, reply: Fasti
       const assigneeName = caller.role === 'CHILD' ? caller.username : undefined
       return mapChore(chore, assigneeName)
     })
+    
+    // Store in cache for 30 seconds
+    await cacheService.set(cacheKey, mappedChores, { ttl: 30 })
     
     return reply.send({ chores: mappedChores })
   } catch (err: any) {
@@ -83,6 +96,11 @@ export async function createChoreController(request: FastifyRequest, reply: Fast
       recurrenceType: recurrenceType === 'NONE' ? null : recurrenceType,
       recurrenceConfig: recurrenceConfig ?? null
     })
+    
+    // Invalidate chore caches for both parent and child
+    await cacheService.delete(cacheService.keys.userChores(authUser.id)) // parent
+    await cacheService.delete(cacheService.keys.userChores(assigneeId)) // child
+    
     return reply.code(201).send({ chore: mapChore(chore, assignee.username) })
   } catch (err: any) {
     request.log.error({ err }, 'Failed to create chore')
@@ -104,6 +122,14 @@ export async function submitChoreController(request: FastifyRequest, reply: Fast
 
   try {
     const updated = await updateChoreStatus(choreId, 'PENDING_APPROVAL')
+    
+    // Invalidate chore caches for both parent and child
+    await cacheService.delete(cacheService.keys.userChores(caller.id)) // child
+    // Also need to invalidate parent's cache - we can use family invalidation
+    if (caller.family_id) {
+      await cacheService.deletePattern(`user:*:chores`)
+    }
+    
     return reply.send({ chore: mapChore(updated) })
   } catch (err: any) {
     request.log.error({ err }, 'Failed to submit chore')
@@ -152,6 +178,11 @@ export async function updateChoreController(request: FastifyRequest, reply: Fast
       recurrenceType: recurrenceType === 'NONE' ? null : recurrenceType,
       recurrenceConfig
     })
+    
+    // Invalidate chore caches for both parent and child
+    await cacheService.delete(cacheService.keys.userChores(authUser.id)) // parent
+    await cacheService.delete(cacheService.keys.userChores(chore.assignee_id)) // child
+    
     return reply.send({ chore: mapChore(updated, assignee.username) })
   } catch (err: any) {
     request.log.error({ err }, 'Failed to update chore')
@@ -186,11 +217,17 @@ async function handleDecision(request: FastifyRequest, reply: FastifyReply, stat
     if (status === 'COMPLETED') {
       try {
         await addRewardToWallet(chore.assignee_id, chore.reward_value_cents)
+        // Invalidate wallet cache
+        await cacheService.delete(cacheService.keys.userWallet(chore.assignee_id))
       } catch (walletErr: any) {
         // Log error but don't fail the request - the chore is already marked as completed
         request.log.warn({ err: walletErr }, 'Failed to update wallet balance, but chore was approved')
       }
     }
+    
+    // Invalidate chore caches for both parent and child
+    await cacheService.delete(cacheService.keys.userChores(authUser.id)) // parent
+    await cacheService.delete(cacheService.keys.userChores(chore.assignee_id)) // child
     
     return reply.send({ chore: mapChore(updated, assignee.username) })
   } catch (err: any) {
