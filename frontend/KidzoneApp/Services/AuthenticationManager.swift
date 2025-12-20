@@ -21,6 +21,8 @@ enum AuthError: LocalizedError {
 
 @MainActor
 class AuthenticationManager: ObservableObject {
+    static let onboardingCompletedNotification = Notification.Name("AuthOnboardingCompleted")
+
     @Published var currentUser: User?
     @Published var session: AuthSession?
     @Published var onboardingRequired = false
@@ -191,5 +193,6 @@ class AuthenticationManager: ObservableObject {
         try? tokenStore.save(session: updatedSession)
         onboardingRequired = false
         isAuthenticated = true
+        NotificationCenter.default.post(name: Self.onboardingCompletedNotification, object: nil)
     }
 }

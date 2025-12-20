@@ -7,6 +7,7 @@ struct ParentDashboardView: View {
     @State private var familyMembers: [User] = []
     @State private var isLoadingMembers = false
     @State private var memberError: String?
+    @State private var hasLoadedMembers = false
     
     var body: some View {
         NavigationView {
@@ -36,11 +37,17 @@ struct ParentDashboardView: View {
                     }
                     .padding(AppTheme.Parent.screenPadding)
                 }
+                .refreshable {
+                    await loadFamilyMembers(force: true)
+                }
             }
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
             .task {
                 await loadFamilyMembers()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AuthenticationManager.onboardingCompletedNotification)) { _ in
+                Task { await loadFamilyMembers(force: true) }
             }
         }
     }
@@ -218,9 +225,10 @@ struct ParentDashboardView: View {
     }
 
     // MARK: - Data
-    private func loadFamilyMembers() async {
+    private func loadFamilyMembers(force: Bool = false) async {
         guard let token = authManager.session?.accessToken else { return }
         if isLoadingMembers { return }
+        if !force && hasLoadedMembers { return }
         isLoadingMembers = true
         memberError = nil
         defer { isLoadingMembers = false }
@@ -228,7 +236,12 @@ struct ParentDashboardView: View {
             let members = try await AuthAPI.shared.fetchFamilyMembers(accessToken: token)
             await MainActor.run {
                 self.familyMembers = members
+                self.hasLoadedMembers = true
             }
+        } catch is CancellationError {
+            // ignore pull-to-refresh cancellations
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // ignore URLSession cancellations (refresh gesture ended)
         } catch {
             await MainActor.run {
                 self.memberError = error.localizedDescription
