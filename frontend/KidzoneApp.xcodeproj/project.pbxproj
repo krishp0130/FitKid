@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		089A88DEC0085CF56D63D346 /* CreditCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86749A5E927FC4E22FEAF91 /* CreditCardsView.swift */; };
 		0A7E8D7F3C4BE6A7C9F5A2D2 /* Auth/AuthAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0F2E5D1B5B4B65A6E4E7F0 /* Auth/AuthAPI.swift */; };
+		1A2B3C4D5E6F7A8B9C0D1E2F /* ChoreAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2F3A4B5C6D7E8F9A0B1C2D /* ChoreAPI.swift */; };
 		0F3C6B7CB2E74E43A7BF7984 /* Auth/GoogleSignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0F0AC9C2C64527B93C9C3B /* Auth/GoogleSignInService.swift */; };
 		1C2A1E2F3B7A4F8E9C8D7B6A /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 511C760E2EF52C63009EB6A3 /* GoogleSignIn */; };
 		1C2A1E303B7A4F8E9C8D7B6A /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 511C760F2EF52C63009EB6A3 /* GoogleSignInSwift */; };
@@ -50,6 +51,7 @@
 		2D7D8E9204D14F81A7E2DFA9 /* Auth/AppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AppleSignInService.swift; sourceTree = "<group>"; };
 		365160D4F0ECEB31CC0E99E6 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		4F0F2E5D1B5B4B65A6E4E7F0 /* Auth/AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AuthAPI.swift; sourceTree = "<group>"; };
+		1E2F3A4B5C6D7E8F9A0B1C2D /* ChoreAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoreAPI.swift; sourceTree = "<group>"; };
 		511C76102EF52E37009EB6A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		53F5569F8533BE2CA35B8DF2 /* ParentChoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentChoresView.swift; sourceTree = "<group>"; };
 		5FBB61F36219AD731E98CD5A /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
@@ -214,6 +216,7 @@
 				6A0F0AC9C2C64527B93C9C3B /* Auth/GoogleSignInService.swift */,
 				4F0F2E5D1B5B4B65A6E4E7F0 /* Auth/AuthAPI.swift */,
 				7E7E7A4DBD6E4A0F9E5B9C51 /* Auth/TokenStore.swift */,
+				1E2F3A4B5C6D7E8F9A0B1C2D /* ChoreAPI.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -304,6 +307,7 @@
 				C6CECBDE424132CBC4E5B887 /* ParentChoresView.swift in Sources */,
 				445078056571B72688075835 /* ParentDashboardView.swift in Sources */,
 				DD107931C65761C32BDC845B /* ParentSettingsView.swift in Sources */,
+				1A2B3C4D5E6F7A8B9C0D1E2F /* ChoreAPI.swift in Sources */,
 				51CA85677D57B2F8FA94784A /* ProfileView.swift in Sources */,
 				626C39FD18533E92B466EEBA /* RoleSelectionView.swift in Sources */,
 				F692ECD2E32A6A1FE403198D /* RootView.swift in Sources */,

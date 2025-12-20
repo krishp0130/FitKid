@@ -33,11 +33,7 @@ struct AppState {
             .init(company: "Future Finance", productName: "Reward Beam", tierLabel: "Tier 2", tierIcon: "arrow.triangle.branch", limitCents: 90000, apr: 0.129, rewards: 0.03, balanceCents: 18000, gradient: [.skyBlue, .emerald]),
             .init(company: "Nova Credit", productName: "Elite Nebula", tierLabel: "Tier 3", tierIcon: "crown.fill", limitCents: 150000, apr: 0.079, rewards: 0.05, balanceCents: 0, gradient: [.sunrise, .purple])
         ],
-        chores: [
-            .init(title: "Clean your desk", detail: "Tidy workspace before homework", rewardCents: 1200, status: .pending),
-            .init(title: "Math practice", detail: "30 mins of Khan Academy", rewardCents: 1500, status: .approved),
-            .init(title: "Laundry fold", detail: "Fold and put away clothes", rewardCents: 1000, status: .overdue)
-        ],
+        chores: [],
         marketItems: [
             .init(name: "30m Device Hours", priceCents: 900, tagline: "Digital", description: "Unlock half an hour of games.", isDigital: true),
             .init(name: "Movie Night", priceCents: 2400, tagline: "Experience", description: "Pick one streaming movie.", isDigital: false),
@@ -56,4 +52,3 @@ struct AppState {
         walletBalanceCents: 5000
     )
 }
-

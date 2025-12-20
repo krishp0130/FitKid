@@ -2,7 +2,11 @@ import SwiftUI
 
 struct ChoresView: View {
     @EnvironmentObject var appState: AppStateViewModel
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var selectedChore: Chore?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var selectedSegment: ChoreSegment = .active
     
     var body: some View {
         NavigationView {
@@ -14,14 +18,28 @@ struct ChoresView: View {
                     emptyStateView
                 } else {
                     ScrollView {
-                        VStack(spacing: AppTheme.Child.cardSpacing) {
-                            ForEach(appState.state.chores) { chore in
-                                ChoreCard(chore: chore) {
-                                    selectedChore = chore
+                        VStack(spacing: 16) {
+                            Picker("Chores", selection: $selectedSegment) {
+                                Text("Active").tag(ChoreSegment.active)
+                                Text("Completed").tag(ChoreSegment.completed)
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.horizontal)
+
+                            VStack(spacing: AppTheme.Child.cardSpacing) {
+                                ForEach(filteredChores) { chore in
+                                    ChoreCard(chore: chore) {
+                                        selectedChore = chore
+                                    }
+                                }
+                                if filteredChores.isEmpty {
+                                    Text("No chores in this section yet.")
+                                        .font(AppTheme.Child.bodyFont)
+                                        .foregroundStyle(AppTheme.Child.textSecondary)
                                 }
                             }
+                            .padding(AppTheme.Child.screenPadding)
                         }
-                        .padding(AppTheme.Child.screenPadding)
                     }
                 }
             }
@@ -30,6 +48,8 @@ struct ChoresView: View {
             .sheet(item: $selectedChore) { chore in
                 ChoreDetailView(chore: chore)
             }
+            .task { await loadChores() }
+            .refreshable { await loadChores(force: true) }
         }
     }
 
@@ -46,6 +66,32 @@ struct ChoresView: View {
             Text("Your parent will assign chores soon")
                 .font(AppTheme.Child.bodyFont)
                 .foregroundStyle(AppTheme.Child.textSecondary)
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(AppTheme.Child.captionFont)
+                    .foregroundStyle(AppTheme.Child.danger)
+            }
+        }
+    }
+
+    private func loadChores(force: Bool = false) async {
+        guard let token = authManager.session?.accessToken else { return }
+        if isLoading { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        await appState.fetchChores(accessToken: token)
+        if let err = appState.choreError {
+            errorMessage = err
+        }
+    }
+
+    private var filteredChores: [Chore] {
+        switch selectedSegment {
+        case .active:
+            return appState.state.chores.filter { $0.status == .assigned || $0.status == .pendingApproval }
+        case .completed:
+            return appState.state.chores.filter { $0.status == .completed || $0.status == .rejected }
         }
     }
 }
@@ -56,9 +102,10 @@ struct ChoreCard: View {
 
     var statusColor: Color {
         switch chore.status {
-        case .pending: return AppTheme.Child.warning
-        case .approved: return AppTheme.Child.success
-        case .overdue: return AppTheme.Child.danger
+        case .assigned: return AppTheme.Child.warning
+        case .pendingApproval: return AppTheme.Child.warning
+        case .completed: return AppTheme.Child.success
+        case .rejected: return AppTheme.Child.danger
         }
     }
 
@@ -116,7 +163,11 @@ struct ChoreCard: View {
 struct ChoreDetailView: View {
     let chore: Chore
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var appState: AppStateViewModel
     @State private var showCompletionAlert = false
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationView {
@@ -146,7 +197,7 @@ struct ChoreDetailView: View {
                     VStack(spacing: 20) {
                         RewardCard(amount: chore.rewardFormatted)
 
-                        if chore.status == .pending {
+                        if chore.status == .assigned {
                             Button(action: {
                                 showCompletionAlert = true
                             }) {
@@ -183,13 +234,28 @@ struct ChoreDetailView: View {
             .alert("Complete Chore?", isPresented: $showCompletionAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Complete!") {
-                    // TODO: Complete chore
-                    dismiss()
+                    Task { await submitChore() }
                 }
             } message: {
                 Text("Once you mark this complete, your parent will need to approve it before you get paid.")
             }
         }
+    }
+
+    private func submitChore() async {
+        guard let token = authManager.session?.accessToken else { return }
+        if isSubmitting { return }
+        isSubmitting = true
+        errorMessage = nil
+        do {
+            try await appState.submitChore(accessToken: token, choreId: chore.id)
+            await MainActor.run { dismiss() }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+            }
+        }
+        isSubmitting = false
     }
 }
 
@@ -214,4 +280,3 @@ struct RewardCard: View {
         )
     }
 }
-

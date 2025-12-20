@@ -4,6 +4,13 @@ import { appleSignInController } from './controllers/appleController.js'
 import { onboardParentController } from './controllers/onboardParentController.js'
 import { onboardChildController } from './controllers/onboardChildController.js'
 import { familyMembersController } from './controllers/familyController.js'
+import {
+  listChoresController,
+  createChoreController,
+  submitChoreController,
+  approveChoreController,
+  rejectChoreController
+} from '../chores/controllers.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
@@ -21,4 +28,17 @@ export async function authRoutes(app: FastifyInstance) {
   app.get('/api/family/members', familyMembersController)
   // Backwards compatibility if frontend still prefixes /auth
   app.get('/api/auth/family/members', familyMembersController)
+
+  // Chores
+  app.get('/api/chores', listChoresController)
+  app.post('/api/chores', createChoreController)
+  app.post('/api/chores/:id/submit', submitChoreController)
+  app.post('/api/chores/:id/approve', approveChoreController)
+  app.post('/api/chores/:id/reject', rejectChoreController)
+  // Compatibility prefix
+  app.get('/api/auth/chores', listChoresController)
+  app.post('/api/auth/chores', createChoreController)
+  app.post('/api/auth/chores/:id/submit', submitChoreController)
+  app.post('/api/auth/chores/:id/approve', approveChoreController)
+  app.post('/api/auth/chores/:id/reject', rejectChoreController)
 }

@@ -164,16 +164,18 @@ struct ParentDashboardView: View {
 
                 Spacer()
 
-                Text("\(appState.state.chores.filter { $0.status == .pending }.count)")
+                let pendingCount = appState.state.chores.filter { $0.status == .pendingApproval }.count
+                Text("\(pendingCount)")
                     .font(AppTheme.Parent.titleFont.weight(.bold))
                     .foregroundStyle(AppTheme.Parent.warning)
             }
 
-            ForEach(appState.state.chores.filter { $0.status == .pending }) { chore in
+            let pendingChores = appState.state.chores.filter { $0.status == .pendingApproval }
+            ForEach(pendingChores) { chore in
                 PendingChoreRow(chore: chore)
             }
 
-            if appState.state.chores.filter({ $0.status == .pending }).isEmpty {
+            if pendingChores.isEmpty {
                 Text("No pending approvals")
                     .font(AppTheme.Parent.bodyFont)
                     .foregroundStyle(AppTheme.Parent.textSecondary)

@@ -95,9 +95,9 @@ struct ChoreRow: View {
 
     var statusColor: Color {
         switch chore.status {
-        case .pending: return AppTheme.Child.warning
-        case .approved: return AppTheme.Child.success
-        case .overdue: return AppTheme.Child.danger
+        case .assigned, .pendingApproval: return AppTheme.Child.warning
+        case .completed: return AppTheme.Child.success
+        case .rejected: return AppTheme.Child.danger
         }
     }
 
@@ -136,13 +136,20 @@ struct ChoreRow: View {
 }
 
 // MARK: - Extensions
-extension Int {
+extension Double {
     var asCurrency: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: self / 100)) ?? "$0"
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: self)) ?? "$0"
+    }
+}
+
+extension Int {
+    var asCurrency: String {
+        let dollars = Double(self) / 100.0
+        return dollars.asCurrency
     }
 }
 
@@ -154,5 +161,3 @@ extension Double {
         return "\(String(format: "%.1f", self)) hrs"
     }
 }
-
-
