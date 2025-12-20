@@ -33,10 +33,18 @@ export async function listChoresController(request: FastifyRequest, reply: Fasti
     if (!caller) return reply.forbidden('User not onboarded')
 
     const chores = await fetchChoresForUser(authUser.id, caller.role as any, caller.family_id)
-    return reply.send({ chores: chores.map(mapChore) })
+    
+    // For children, we need to handle assigneeName differently since it's not in the query result
+    const mappedChores = chores.map(chore => {
+      // For child users, the assignee is themselves, so use caller.username
+      const assigneeName = caller.role === 'CHILD' ? caller.username : undefined
+      return mapChore(chore, assigneeName)
+    })
+    
+    return reply.send({ chores: mappedChores })
   } catch (err: any) {
-    request.log.error({ err }, 'Failed to fetch chores')
-    return reply.internalServerError('Failed to fetch chores')
+    request.log.error({ err, message: err.message, stack: err.stack }, 'Failed to fetch chores')
+    return reply.internalServerError(err.message || 'Failed to fetch chores')
   }
 }
 
@@ -199,9 +207,10 @@ function mapChore(chore: any, assigneeName?: string) {
     reward: (chore.reward_value_cents ?? 0) / 100,
     status: chore.status,
     assigneeId: chore.assignee_id,
-    assigneeName: assigneeName ?? chore.assignee_username,
-    dueDate: chore.due_date,
+    assigneeName: assigneeName ?? chore.assignee_username ?? null,
+    dueDate: chore.due_date ?? null,
     recurrenceType: chore.recurrence_type ?? null,
-    recurrenceConfig: chore.recurrence_config ?? null
+    recurrenceConfig: chore.recurrence_config ?? null,
+    parentChoreId: chore.parent_chore_id ?? null
   }
 }

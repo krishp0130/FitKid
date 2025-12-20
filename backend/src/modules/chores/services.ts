@@ -9,7 +9,10 @@ export async function fetchChoresForUser(userId: string, role: 'PARENT' | 'CHILD
       .eq('assignee_id', userId)
       .order('created_at', { ascending: false })
 
-    if (error) throw new Error(error.message)
+    if (error) {
+      console.error('Error fetching chores for child:', error)
+      throw new Error(`Database error: ${error.message} (code: ${error.code})`)
+    }
     return (data as DbChore[]) ?? []
   }
 
