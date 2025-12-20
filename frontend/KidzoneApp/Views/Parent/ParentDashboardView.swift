@@ -7,7 +7,6 @@ struct ParentDashboardView: View {
     @State private var familyMembers: [User] = []
     @State private var isLoadingMembers = false
     @State private var memberError: String?
-    @State private var hasLoadedMembers = false
     
     var body: some View {
         NavigationView {
@@ -38,16 +37,31 @@ struct ParentDashboardView: View {
                     .padding(AppTheme.Parent.screenPadding)
                 }
                 .refreshable {
-                    await loadFamilyMembers(force: true)
+                    await refreshDashboard()
                 }
             }
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
             .task {
-                await loadFamilyMembers()
+                await refreshDashboard()
+            }
+            .onAppear {
+                // Refresh when switching back to dashboard tab
+                Task {
+                    await refreshDashboard()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: AuthenticationManager.onboardingCompletedNotification)) { _ in
-                Task { await loadFamilyMembers(force: true) }
+                Task { await refreshDashboard() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshDashboard"))) { _ in
+                Task { await refreshDashboard() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreCreated"))) { _ in
+                Task { await refreshDashboard() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
+                Task { await refreshDashboard() }
             }
         }
     }
@@ -172,7 +186,23 @@ struct ParentDashboardView: View {
 
             let pendingChores = appState.state.chores.filter { $0.status == .pendingApproval }
             ForEach(pendingChores) { chore in
-                PendingChoreRow(chore: chore)
+                PendingChoreRow(chore: chore, onDecision: { action in
+                    Task {
+                        guard let token = authManager.session?.accessToken else { return }
+                        do {
+                            switch action {
+                            case .approve:
+                                try await appState.approveChore(accessToken: token, choreId: chore.id)
+                            case .reject:
+                                try await appState.rejectChore(accessToken: token, choreId: chore.id)
+                            }
+                            // Refresh dashboard after decision
+                            await refreshDashboard()
+                        } catch {
+                            print("Error handling chore decision: \(error)")
+                        }
+                    }
+                })
             }
 
             if pendingChores.isEmpty {
@@ -227,10 +257,20 @@ struct ParentDashboardView: View {
     }
 
     // MARK: - Data
+    private func refreshDashboard() async {
+        guard let token = authManager.session?.accessToken else { return }
+        
+        // Refresh both family members and chores in parallel
+        async let membersTask = loadFamilyMembers(force: true)
+        async let choresTask = appState.fetchChores(accessToken: token)
+        
+        await membersTask
+        await choresTask
+    }
+    
     private func loadFamilyMembers(force: Bool = false) async {
         guard let token = authManager.session?.accessToken else { return }
-        if isLoadingMembers { return }
-        if !force && hasLoadedMembers { return }
+        if isLoadingMembers && !force { return }
         isLoadingMembers = true
         memberError = nil
         defer { isLoadingMembers = false }
@@ -238,7 +278,6 @@ struct ParentDashboardView: View {
             let members = try await AuthAPI.shared.fetchFamilyMembers(accessToken: token)
             await MainActor.run {
                 self.familyMembers = members
-                self.hasLoadedMembers = true
             }
         } catch is CancellationError {
             // ignore pull-to-refresh cancellations
@@ -284,6 +323,7 @@ struct FamilyMemberRow: View {
 
 struct PendingChoreRow: View {
     let chore: Chore
+    var onDecision: ((ApprovalAction) -> Void)?
 
     var body: some View {
         HStack {
@@ -295,6 +335,12 @@ struct PendingChoreRow: View {
                 Text(chore.detail)
                     .font(AppTheme.Parent.captionFont)
                     .foregroundStyle(AppTheme.Parent.textSecondary)
+                
+                if let assigneeName = chore.assigneeName {
+                    Text("From: \(assigneeName)")
+                        .font(AppTheme.Parent.captionFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.7))
+                }
             }
 
             Spacer()
@@ -305,13 +351,17 @@ struct PendingChoreRow: View {
                     .foregroundStyle(AppTheme.Parent.success)
 
                 HStack(spacing: 8) {
-                    Button(action: {}) {
+                    Button(action: {
+                        onDecision?(.approve)
+                    }) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(AppTheme.Parent.success)
                     }
 
-                    Button(action: {}) {
+                    Button(action: {
+                        onDecision?(.reject)
+                    }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(AppTheme.Parent.danger)

@@ -99,6 +99,8 @@ struct ParentChoresView: View {
             case .reject:
                 try await appState.rejectChore(accessToken: token, choreId: chore.id)
             }
+            // Notify dashboard to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
         } catch {
             await MainActor.run {
                 self.errorMessage = error.localizedDescription
@@ -460,6 +462,8 @@ struct AddChoreView: View {
                 dueDateISO: dueDateISO,
                 recurrenceType: recurrenceType == "NONE" ? nil : recurrenceType
             )
+            // Notify dashboard to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("ChoreCreated"), object: nil)
             await MainActor.run { dismiss() }
         } catch {
             await MainActor.run { errorMessage = error.localizedDescription }

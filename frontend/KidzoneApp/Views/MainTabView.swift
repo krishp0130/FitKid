@@ -73,6 +73,12 @@ struct ParentMainTabView: View {
                     Label("Dashboard", systemImage: "chart.bar.fill")
                 }
                 .tag(0)
+                .onAppear {
+                    // Refresh dashboard when tab is selected
+                    Task {
+                        await refreshDashboardIfNeeded()
+                    }
+                }
 
             ParentChoresView()
                 .tabItem {
@@ -93,9 +99,20 @@ struct ParentMainTabView: View {
                 .tag(3)
         }
         .tint(AppTheme.Parent.primary)
-        .onAppear {
-            appState.loadMockData()
+        .onChange(of: selectedTab) { newValue in
+            // Refresh dashboard when switching back to it
+            if newValue == 0 {
+                Task {
+                    await refreshDashboardIfNeeded()
+                }
+            }
         }
+    }
+    
+    private func refreshDashboardIfNeeded() async {
+        // This will be handled by ParentDashboardView's onAppear
+        // Just trigger a notification that dashboard should refresh
+        NotificationCenter.default.post(name: NSNotification.Name("RefreshDashboard"), object: nil)
     }
 }
 

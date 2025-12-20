@@ -173,6 +173,8 @@ struct EditChoreView: View {
                 dueDateISO: dueDateISO,
                 recurrenceType: recurrenceType == "NONE" ? nil : recurrenceType
             )
+            // Notify dashboard to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
             await MainActor.run { dismiss() }
         } catch {
             await MainActor.run {
