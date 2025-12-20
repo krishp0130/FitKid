@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct ParentApprovalsView: View {
+    @EnvironmentObject var appState: AppStateViewModel
+    @EnvironmentObject var authManager: AuthenticationManager
+    @State private var refreshTimer: Timer?
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -23,6 +27,33 @@ struct ParentApprovalsView: View {
             }
             .navigationTitle("Approvals")
             .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                // Start auto-refresh timer (every 2 seconds)
+                startAutoRefresh()
+            }
+            .onDisappear {
+                // Stop timer when view disappears
+                stopAutoRefresh()
+            }
         }
+    }
+    
+    private func startAutoRefresh() {
+        // Stop existing timer if any
+        stopAutoRefresh()
+        
+        // Create new timer that fires every 2 seconds
+        // This view is currently a placeholder, but timer is ready for when it's implemented
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            // TODO: Refresh approvals data when this view is implemented
+            // Task {
+            //     await refreshApprovals()
+            // }
+        }
+    }
+    
+    private func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 }

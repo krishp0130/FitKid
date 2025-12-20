@@ -106,37 +106,76 @@ export async function updateChoreStatus(id: string, status: ChoreStatus): Promis
 }
 
 export async function addRewardToWallet(userId: string, rewardCents: number): Promise<void> {
-  // First, get current wallet balance (if the column exists)
-  const { data: userData, error: fetchError } = await supabaseDb
-    .from('users')
-    .select('wallet_balance_cents')
-    .eq('id', userId)
+  // Try to update wallet balance using ledger_accounts system
+  // First, find or create a "Wallet" account for this user
+  const { data: walletAccount, error: accountError } = await supabaseDb
+    .from('ledger_accounts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', 'Wallet')
+    .eq('type', 'ASSET')
     .maybeSingle()
 
-  if (fetchError) {
-    // If column doesn't exist, that's okay - wallet feature may not be fully implemented in DB yet
-    // Just log and continue - we'll add it to the schema later if needed
-    console.warn('Wallet balance column may not exist:', fetchError.message)
-    return
+  if (accountError) {
+    console.error('Error finding wallet account:', accountError.message)
+    throw new Error(`Failed to find wallet account: ${accountError.message}`)
   }
 
-  if (!userData) {
-    throw new Error('User not found')
+  let walletAccountId: string
+
+  if (!walletAccount) {
+    // Create wallet account if it doesn't exist
+    const { data: newAccount, error: createError } = await supabaseDb
+      .from('ledger_accounts')
+      .insert({
+        user_id: userId,
+        name: 'Wallet',
+        type: 'ASSET'
+      })
+      .select('id')
+      .single()
+
+    if (createError || !newAccount) {
+      console.error('Error creating wallet account:', createError?.message)
+      throw new Error(`Failed to create wallet account: ${createError?.message}`)
+    }
+
+    walletAccountId = newAccount.id
+  } else {
+    walletAccountId = walletAccount.id
   }
 
-  const currentBalance = (userData.wallet_balance_cents as number) ?? 0
-  const newBalance = currentBalance + rewardCents
+  // Create a transaction for the reward
+  const { data: transaction, error: txError } = await supabaseDb
+    .from('transactions')
+    .insert({
+      description: `Chore reward: ${rewardCents / 100} dollars`,
+      status: 'CLEARED',
+      metadata: { source: 'chore_reward' }
+    })
+    .select('id')
+    .single()
 
-  const { error: updateError } = await supabaseDb
-    .from('users')
-    .update({ wallet_balance_cents: newBalance })
-    .eq('id', userId)
-
-  if (updateError) {
-    // If update fails due to missing column, that's okay
-    console.warn('Wallet balance update may have failed (column may not exist):', updateError.message)
-    return
+  if (txError || !transaction) {
+    console.error('Error creating reward transaction:', txError?.message)
+    throw new Error(`Failed to create transaction: ${txError?.message}`)
   }
+
+  // Create posting to credit the wallet (positive amount = debit to asset account)
+  const { error: postingError } = await supabaseDb
+    .from('postings')
+    .insert({
+      transaction_id: transaction.id,
+      account_id: walletAccountId,
+      amount: rewardCents // Positive amount = debit to asset = increase balance
+    })
+
+  if (postingError) {
+    console.error('Error creating wallet posting:', postingError.message)
+    throw new Error(`Failed to credit wallet: ${postingError.message}`)
+  }
+
+  console.log(`Successfully added ${rewardCents} cents ($${(rewardCents / 100).toFixed(2)}) to wallet for user ${userId}`)
 }
 
 export async function fetchChore(id: string): Promise<DbChore | null> {

@@ -7,6 +7,7 @@ struct ParentDashboardView: View {
     @State private var familyMembers: [User] = []
     @State private var isLoadingMembers = false
     @State private var memberError: String?
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -63,7 +64,32 @@ struct ParentDashboardView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
                 Task { await refreshDashboard() }
             }
+            .onAppear {
+                // Start auto-refresh timer (every 2 seconds)
+                startAutoRefresh()
+            }
+            .onDisappear {
+                // Stop timer when view disappears
+                stopAutoRefresh()
+            }
         }
+    }
+    
+    private func startAutoRefresh() {
+        // Stop existing timer if any
+        stopAutoRefresh()
+        
+        // Create new timer that fires every 2 seconds
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            Task {
+                await refreshDashboard()
+            }
+        }
+    }
+    
+    private func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     private var headerSection: some View {

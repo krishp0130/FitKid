@@ -9,6 +9,7 @@ struct ParentChoresView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -76,7 +77,32 @@ struct ParentChoresView: View {
             .task {
                 await loadChores()
             }
+            .onAppear {
+                // Start auto-refresh timer (every 2 seconds)
+                startAutoRefresh()
+            }
+            .onDisappear {
+                // Stop timer when view disappears
+                stopAutoRefresh()
+            }
         }
+    }
+    
+    private func startAutoRefresh() {
+        // Stop existing timer if any
+        stopAutoRefresh()
+        
+        // Create new timer that fires every 2 seconds
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            Task {
+                await loadChores()
+            }
+        }
+    }
+    
+    private func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     private func loadChores() async {
@@ -92,6 +118,10 @@ struct ParentChoresView: View {
 
     private func handleDecision(chore: Chore, action: ApprovalAction) async {
         guard let token = authManager.session?.accessToken else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        
         do {
             switch action {
             case .approve:
@@ -99,6 +129,8 @@ struct ParentChoresView: View {
             case .reject:
                 try await appState.rejectChore(accessToken: token, choreId: chore.id)
             }
+            // Refresh chores list to show updated status
+            await loadChores()
             // Notify dashboard to refresh
             NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
         } catch {
@@ -180,18 +212,44 @@ struct ParentChoreCard: View {
                     )
 
                 if chore.status == .pendingApproval {
-                    HStack(spacing: 8) {
-                        Button {
-                            onDecision?(.approve)
-                        } label: {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(AppTheme.Parent.success)
-                        }
-                        Button {
-                            onDecision?(.reject)
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(AppTheme.Parent.danger)
+                    VStack(spacing: 8) {
+                        Text("Needs Approval")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                        
+                        HStack(spacing: 8) {
+                            Button {
+                                onDecision?(.approve)
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text("Approve")
+                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(AppTheme.Parent.success)
+                                )
+                            }
+                            Button {
+                                onDecision?(.reject)
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "xmark.circle.fill")
+                                    Text("Reject")
+                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(AppTheme.Parent.danger)
+                                )
+                            }
                         }
                     }
                 } else if chore.status == .assigned {
