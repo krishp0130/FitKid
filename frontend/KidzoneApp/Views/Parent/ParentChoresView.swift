@@ -9,6 +9,7 @@ struct ParentChoresView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -75,6 +76,18 @@ struct ParentChoresView: View {
             }
             .task {
                 await loadChores()
+            }
+            .onAppear {
+                // Auto-refresh every 1 second
+                refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                    Task {
+                        await loadChores()
+                    }
+                }
+            }
+            .onDisappear {
+                refreshTimer?.invalidate()
+                refreshTimer = nil
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreCreated"))) { _ in
                 Task { await loadChores() }

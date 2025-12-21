@@ -8,6 +8,7 @@ struct ParentDashboardView: View {
     @State private var isLoadingMembers = false
     @State private var memberError: String?
     @State private var lastFamilyFetch: Date?
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -50,6 +51,16 @@ struct ParentDashboardView: View {
                 Task {
                     await refreshDashboard(force: false, showLoading: false)
                 }
+                // Auto-refresh every 1 second
+                refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                    Task {
+                        await refreshDashboard(force: true, showLoading: false)
+                    }
+                }
+            }
+            .onDisappear {
+                refreshTimer?.invalidate()
+                refreshTimer = nil
             }
             .onReceive(NotificationCenter.default.publisher(for: AuthenticationManager.onboardingCompletedNotification)) { _ in
                 Task { await refreshDashboard(force: true, showLoading: false) }
@@ -271,7 +282,7 @@ struct ParentDashboardView: View {
     
     private func loadFamilyMembers(force: Bool = false, showLoading: Bool = true) async {
         guard let token = authManager.session?.accessToken else { return }
-        let freshnessWindow: TimeInterval = 10
+        let freshnessWindow: TimeInterval = 0.5 // Reduced from 10 to 0.5 seconds for real-time updates
         if !force, let last = lastFamilyFetch, Date().timeIntervalSince(last) < freshnessWindow {
             return
         }

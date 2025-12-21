@@ -26,7 +26,7 @@ class AppStateViewModel: ObservableObject {
     }
 
     func fetchChores(accessToken: String, force: Bool = false) async {
-        let freshnessWindow: TimeInterval = 10
+        let freshnessWindow: TimeInterval = 0.5 // Reduced from 10 to 0.5 seconds for real-time updates
         if !force, let last = lastChoresFetch, Date().timeIntervalSince(last) < freshnessWindow {
             return
         }
@@ -104,7 +104,7 @@ class AppStateViewModel: ObservableObject {
 
     // MARK: - Wallet
     func refreshWallet(accessToken: String, force: Bool = false) async {
-        let freshnessWindow: TimeInterval = 10
+        let freshnessWindow: TimeInterval = 0.5 // Reduced from 10 to 0.5 seconds for real-time updates
         if !force, let last = lastWalletFetch, Date().timeIntervalSince(last) < freshnessWindow {
             return
         }

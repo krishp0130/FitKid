@@ -42,9 +42,9 @@ struct ParentApprovalsView: View {
         // Stop existing timer if any
         stopAutoRefresh()
         
-        // Create new timer that fires every 2 seconds
+        // Create new timer that fires every 1 second
         // This view is currently a placeholder, but timer is ready for when it's implemented
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             // TODO: Refresh approvals data when this view is implemented
             // Task {
             //     await refreshApprovals()
