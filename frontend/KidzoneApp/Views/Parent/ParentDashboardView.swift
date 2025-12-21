@@ -63,6 +63,9 @@ struct ParentDashboardView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
                 Task { await refreshDashboard(force: true, showLoading: false) }
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FamilyUpdated"))) { _ in
+                Task { await refreshDashboard(force: true, showLoading: false) }
+            }
         }
     }
 

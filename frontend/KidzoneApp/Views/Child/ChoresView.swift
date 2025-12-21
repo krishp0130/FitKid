@@ -42,7 +42,7 @@ struct ChoresView: View {
                         }
                     }
                 }
-            }
+        }
             .navigationTitle("Chores")
             .navigationBarTitleDisplayMode(.large)
             .sheet(item: $selectedChore) { chore in
@@ -50,6 +50,9 @@ struct ChoresView: View {
             }
             .task { await loadChores() }
             .refreshable { await loadChores(force: true) }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
+                Task { await loadChores(force: true) }
+            }
         }
     }
 
@@ -249,7 +252,10 @@ struct ChoreDetailView: View {
         errorMessage = nil
         do {
             try await appState.submitChore(accessToken: token, choreId: chore.id)
-            await MainActor.run { dismiss() }
+            await MainActor.run {
+                NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
+                dismiss()
+            }
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription

@@ -76,6 +76,12 @@ struct ParentChoresView: View {
             .task {
                 await loadChores()
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreCreated"))) { _ in
+                Task { await loadChores() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
+                Task { await loadChores() }
+            }
         }
     }
     
@@ -508,8 +514,9 @@ struct AddChoreView: View {
                 dueDateISO: dueDateISO,
                 recurrenceType: recurrenceType == "NONE" ? nil : recurrenceType
             )
-            // Notify dashboard to refresh
+            // Notify listeners (dashboard/child list) to refresh
             NotificationCenter.default.post(name: NSNotification.Name("ChoreCreated"), object: nil)
+            NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
             await MainActor.run { dismiss() }
         } catch {
             await MainActor.run { errorMessage = error.localizedDescription }
