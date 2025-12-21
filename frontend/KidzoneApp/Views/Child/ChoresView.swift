@@ -7,6 +7,7 @@ struct ChoresView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         NavigationView {
@@ -48,10 +49,22 @@ struct ChoresView: View {
             .sheet(item: $selectedChore) { chore in
                 ChoreDetailView(chore: chore)
             }
-            .task { await loadChores() }
-            .refreshable { await loadChores(force: true) }
+            .task { await loadChores(force: false, showLoading: true) }
+            .onAppear {
+                // Auto-refresh every 1 second (silently in background)
+                refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                    Task {
+                        await loadChores(force: false, showLoading: false)
+                    }
+                }
+            }
+            .onDisappear {
+                refreshTimer?.invalidate()
+                refreshTimer = nil
+            }
+            .refreshable { await loadChores(force: true, showLoading: false) }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
-                Task { await loadChores(force: true) }
+                Task { await loadChores(force: true, showLoading: false) }
             }
         }
     }
@@ -77,12 +90,18 @@ struct ChoresView: View {
         }
     }
 
-    private func loadChores(force: Bool = false) async {
+    private func loadChores(force: Bool = false, showLoading: Bool = false) async {
         guard let token = authManager.session?.accessToken else { return }
-        if isLoading { return }
-        isLoading = true
+        if isLoading && showLoading { return }
+        if showLoading {
+            isLoading = true
+        }
         errorMessage = nil
-        defer { isLoading = false }
+        defer { 
+            if showLoading {
+                isLoading = false
+            }
+        }
         await appState.fetchChores(accessToken: token, force: force)
         if let err = appState.choreError {
             errorMessage = err

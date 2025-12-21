@@ -10,6 +10,7 @@ struct ParentChoresView: View {
     @State private var errorMessage: String?
     @State private var selectedSegment: ChoreSegment = .active
     @State private var refreshTimer: Timer?
+    @State private var hasLoadedOnce = false
     
     var body: some View {
         NavigationView {
@@ -75,13 +76,13 @@ struct ParentChoresView: View {
                 Text("Edit: \(chore.title)") // Temporary placeholder
             }
             .task {
-                await loadChores()
+                await loadChores(showLoading: true)
             }
             .onAppear {
-                // Auto-refresh every 1 second
+                // Auto-refresh every 1 second (silently in background)
                 refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
                     Task {
-                        await loadChores()
+                        await loadChores(showLoading: false)
                     }
                 }
             }
@@ -90,27 +91,35 @@ struct ParentChoresView: View {
                 refreshTimer = nil
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreCreated"))) { _ in
-                Task { await loadChores() }
+                Task { await loadChores(showLoading: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChoreUpdated"))) { _ in
-                Task { await loadChores() }
+                Task { await loadChores(showLoading: false) }
             }
         }
     }
     
-    private func loadChores() async {
+    private func loadChores(showLoading: Bool = false) async {
         guard let token = authManager.session?.accessToken else { return }
-        isLoading = true
+        if showLoading {
+            isLoading = true
+        }
         errorMessage = nil
-        defer { isLoading = false }
+        defer { 
+            if showLoading {
+                isLoading = false
+            }
+        }
         await appState.fetchChores(accessToken: token, force: false)
         if let err = appState.choreError {
             errorMessage = err
         }
+        hasLoadedOnce = true
     }
 
     private func handleDecision(chore: Chore, action: ApprovalAction) async {
         guard let token = authManager.session?.accessToken else { return }
+        // Show loading for user-initiated actions
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -122,8 +131,8 @@ struct ParentChoresView: View {
             case .reject:
                 try await appState.rejectChore(accessToken: token, choreId: chore.id)
             }
-            // Refresh chores list to show updated status
-            await loadChores()
+            // Refresh chores list silently
+            await loadChores(showLoading: false)
             // Notify dashboard to refresh
             NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
         } catch {
