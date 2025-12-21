@@ -51,8 +51,8 @@ export async function listChoresController(request: FastifyRequest, reply: Fasti
       return mapChore(chore, assigneeName)
     })
     
-    // Store in cache for 30 seconds
-    await cacheService.set(cacheKey, mappedChores, { ttl: 30 })
+    // Store in cache for 1 second (for real-time updates)
+    await cacheService.set(cacheKey, mappedChores, { ttl: 1 })
     
     return reply.send({ chores: mappedChores })
   } catch (err: any) {

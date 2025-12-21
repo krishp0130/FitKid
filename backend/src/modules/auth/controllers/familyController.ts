@@ -25,8 +25,8 @@ export async function familyMembersController(request: FastifyRequest, reply: Fa
     const members = await fetchFamilyMembers(caller.family_id)
     const mappedMembers = members.map(member => mapUser(member))
     
-    // Store in cache for 30 seconds
-    await cacheService.set(cacheKey, mappedMembers, { ttl: 30 })
+    // Store in cache for 1 second (for real-time updates)
+    await cacheService.set(cacheKey, mappedMembers, { ttl: 1 })
     
     return reply.send({ members: mappedMembers })
   } catch (err: any) {

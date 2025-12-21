@@ -19,8 +19,8 @@ export async function walletBalanceController(request: FastifyRequest, reply: Fa
     // Cache miss - fetch from database
     const balanceCents = await getWalletBalanceCents(authUser.id)
     
-    // Store in cache for 30 seconds
-    await cacheService.set(cacheKey, balanceCents, { ttl: 30 })
+    // Store in cache for 1 second (for real-time updates)
+    await cacheService.set(cacheKey, balanceCents, { ttl: 1 })
     
     return reply.send({ balanceCents })
   } catch (err: any) {
