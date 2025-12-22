@@ -238,11 +238,3 @@ struct UpgradeEligibilityResponse: Codable {
     let creditScore: Int
 }
 
-// MARK: - Helper Extensions
-
-extension Double {
-    var asCurrency: String {
-        String(format: "$%.2f", self)
-    }
-}
-

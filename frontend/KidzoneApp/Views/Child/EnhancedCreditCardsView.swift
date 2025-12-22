@@ -105,10 +105,9 @@ struct EnhancedCreditCardsView: View {
     private func loadCreditData() async {
         guard let token = authManager.session?.accessToken else { return }
         isLoading = true
-        async let cards = appState.fetchCreditCards(accessToken: token, force: false)
-        async let score = appState.fetchCreditScore(accessToken: token)
-        await cards
-        await score
+        async let cardsTask = appState.fetchCreditCards(accessToken: token, force: false)
+        async let scoreTask = appState.fetchCreditScore(accessToken: token)
+        _ = await (cardsTask, scoreTask)
         isLoading = false
     }
 }
@@ -230,7 +229,7 @@ struct CreditCardView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header with Tier
             HStack {
-                Image(systemName: card.tierConfig.icon)
+                Image(systemName: card.tier.icon)
                     .font(.title2)
                 Text(card.tierConfig.name)
                     .font(AppTheme.Child.headlineFont)
@@ -507,14 +506,3 @@ struct TierInfoRow: View {
         }
     }
 }
-
-// MARK: - Scale Button Style
-
-struct ScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-

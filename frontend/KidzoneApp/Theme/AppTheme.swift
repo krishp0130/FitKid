@@ -212,3 +212,12 @@ struct AppTheme {
     static let cardSpacing: CGFloat = 16
 }
 
+// MARK: - Shared Button Styles
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3), value: configuration.isPressed)
+    }
+}
+
