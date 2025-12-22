@@ -58,7 +58,7 @@ struct RequestHistoryView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
+            .applyScrollContentBackgroundHidden()
             .background(Color.clear)
         }
     }
@@ -120,5 +120,18 @@ private struct ChildRequestRow: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(AppTheme.Child.cardBackground.opacity(0.5))
         )
+    }
+}
+
+// MARK: - Compatibility Helpers
+
+private extension View {
+    @ViewBuilder
+    func applyScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, *) {
+            self.scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }

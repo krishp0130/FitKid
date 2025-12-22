@@ -67,7 +67,7 @@ struct ParentApprovalsView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
+            .applyScrollContentBackgroundHidden()
             .background(Color.clear)
         }
     }
@@ -86,6 +86,19 @@ struct ParentApprovalsView: View {
             await requestsVM.reject(accessToken: token, id: request.id)
         }
         await load(force: true)
+    }
+}
+
+// MARK: - Compatibility Helpers
+
+private extension View {
+    @ViewBuilder
+    func applyScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, *) {
+            self.scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }
 

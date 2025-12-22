@@ -173,7 +173,6 @@
 				53F5569F8533BE2CA35B8DF2 /* ParentChoresView.swift */,
 				EE7649654D8D8B3ACEC51D26 /* ParentDashboardView.swift */,
 				1ABA75B8AEF11F5F5507109A /* ParentSettingsView.swift */,
-				AA4444444444444444444444 /* RequestHistoryView.swift */,
 			);
 			path = Parent;
 			sourceTree = "<group>";
@@ -211,6 +210,7 @@
 				F86749A5E927FC4E22FEAF91 /* CreditCardsView.swift */,
 				18BD2C86155053E5117AF357 /* MarketplaceView.swift */,
 				A114ECCC1D961BDDF9BEA892 /* ProfileView.swift */,
+				AA4444444444444444444444 /* RequestHistoryView.swift */,
 			);
 			path = Child;
 			sourceTree = "<group>";
