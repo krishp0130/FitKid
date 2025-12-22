@@ -6,11 +6,16 @@ class AppStateViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var choreError: String?
     @Published var walletError: String?
+    @Published var creditCards: [CreditCard] = []
+    @Published var creditScore: CreditScore?
+    @Published var creditError: String?
 
     private let choreAPI = ChoreAPI.shared
     private let moneyAPI = MoneyAPI.shared
+    private let creditAPI = CreditAPI.shared
     private var lastChoresFetch: Date?
     private var lastWalletFetch: Date?
+    private var lastCreditFetch: Date?
 
     func loadMockData() {
         isLoading = true
@@ -120,6 +125,54 @@ class AppStateViewModel: ObservableObject {
                 self.walletError = error.localizedDescription
             }
         }
+    }
+
+    // MARK: - Credit System
+    func fetchCreditCards(accessToken: String, force: Bool = false) async {
+        let freshnessWindow: TimeInterval = 0.5
+        if !force, let last = lastCreditFetch, Date().timeIntervalSince(last) < freshnessWindow {
+            return
+        }
+        do {
+            let cards = try await creditAPI.getCreditCards(accessToken: accessToken)
+            await MainActor.run {
+                self.creditCards = cards
+                self.creditError = nil
+                self.lastCreditFetch = Date()
+            }
+        } catch {
+            await MainActor.run {
+                self.creditError = error.localizedDescription
+            }
+        }
+    }
+    
+    func fetchCreditScore(accessToken: String) async {
+        do {
+            let score = try await creditAPI.getCreditScore(accessToken: accessToken)
+            await MainActor.run {
+                self.creditScore = score
+                self.creditError = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.creditError = error.localizedDescription
+            }
+        }
+    }
+    
+    func applyForCreditCard(accessToken: String, tier: CreditTier? = nil) async throws {
+        let card = try await creditAPI.applyForCreditCard(accessToken: accessToken, requestedTier: tier)
+        await MainActor.run {
+            self.creditCards.insert(card, at: 0)
+            self.lastCreditFetch = Date()
+        }
+    }
+    
+    func makePayment(accessToken: String, cardId: String, amount: Double) async throws {
+        try await creditAPI.makePayment(accessToken: accessToken, cardId: cardId, amountDollars: amount)
+        await fetchCreditCards(accessToken: accessToken, force: true)
+        await fetchCreditScore(accessToken: accessToken)
     }
 
     // MARK: - Future

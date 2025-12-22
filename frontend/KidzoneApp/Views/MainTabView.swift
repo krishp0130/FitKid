@@ -36,7 +36,7 @@ struct ChildMainTabView: View {
                 }
                 .tag(1)
 
-            CreditCardsView()
+            EnhancedCreditCardsView()
                 .tabItem {
                     Label("Cards", systemImage: "creditcard.fill")
                 }
