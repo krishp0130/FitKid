@@ -3,57 +3,168 @@ import SwiftUI
 struct ParentApprovalsView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @EnvironmentObject var authManager: AuthenticationManager
-    @State private var refreshTimer: Timer?
-    
+    @StateObject private var requestsVM = RequestsViewModel()
+    @State private var isRefreshing = false
+
     var body: some View {
         NavigationView {
             ZStack {
                 AppTheme.Parent.backgroundGradient
                     .ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    Image(systemName: "cart.badge.questionmark")
-                        .font(.system(size: 80))
-                        .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.5))
-                    Text("Requests coming soon")
-                        .font(AppTheme.Parent.titleFont)
-                        .foregroundStyle(AppTheme.Parent.textPrimary)
-                    Text("This tab will list purchase requests for approval.")
-                        .font(AppTheme.Parent.bodyFont)
-                        .foregroundStyle(AppTheme.Parent.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
+                content
             }
             .navigationTitle("Approvals")
             .navigationBarTitleDisplayMode(.large)
-            .onAppear {
-                // Start auto-refresh timer (every 2 seconds)
-                startAutoRefresh()
+            .task {
+                await load(force: false)
             }
-            .onDisappear {
-                // Stop timer when view disappears
-                stopAutoRefresh()
+            .refreshable {
+                await load(force: true)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FamilyUpdated"))) { _ in
+                Task { await load(force: true) }
             }
         }
     }
-    
-    private func startAutoRefresh() {
-        // Stop existing timer if any
-        stopAutoRefresh()
-        
-        // Create new timer that fires every 1 second
-        // This view is currently a placeholder, but timer is ready for when it's implemented
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            // TODO: Refresh approvals data when this view is implemented
-            // Task {
-            //     await refreshApprovals()
-            // }
+
+    @ViewBuilder
+    private var content: some View {
+        if requestsVM.isLoading && requestsVM.requests.isEmpty {
+            ProgressView()
+                .tint(AppTheme.Parent.primary)
+        } else if let error = requestsVM.errorMessage {
+            VStack(spacing: 12) {
+                Text(error)
+                    .font(AppTheme.Parent.bodyFont)
+                    .foregroundStyle(AppTheme.Parent.danger)
+                Button("Retry") { Task { await load(force: true) } }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.Parent.primary)
+            }
+        } else if requestsVM.requests.isEmpty {
+            VStack(spacing: 16) {
+                Image(systemName: "cart")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.5))
+                Text("No requests yet")
+                    .font(AppTheme.Parent.titleFont)
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                Text("Kids can request items and they will appear here for approval.")
+                    .font(AppTheme.Parent.bodyFont)
+                    .foregroundStyle(AppTheme.Parent.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+            .padding()
+        } else {
+            List {
+                ForEach(requestsVM.requests) { request in
+                    RequestRow(request: request) { action in
+                        Task { await handle(action: action, for: request) }
+                    }
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
         }
     }
-    
-    private func stopAutoRefresh() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+
+    private func load(force: Bool) async {
+        guard let token = authManager.session?.accessToken else { return }
+        await requestsVM.load(accessToken: token, force: force, showLoading: true)
+    }
+
+    private func handle(action: ApprovalAction, for request: PurchaseRequest) async {
+        guard let token = authManager.session?.accessToken else { return }
+        switch action {
+        case .approve:
+            await requestsVM.approve(accessToken: token, id: request.id)
+        case .reject:
+            await requestsVM.reject(accessToken: token, id: request.id)
+        }
+        await load(force: true)
+    }
+}
+
+struct RequestRow: View {
+    let request: PurchaseRequest
+    var onDecision: ((ApprovalAction) -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(request.title)
+                        .font(AppTheme.Parent.headlineFont)
+                        .foregroundStyle(AppTheme.Parent.textPrimary)
+                    if let requester = request.requesterName {
+                        Text("From: \(requester)")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                    if let desc = request.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.8))
+                            .lineLimit(2)
+                    }
+                }
+                Spacer()
+                Text(request.priceFormatted)
+                    .font(AppTheme.Parent.headlineFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Parent.success)
+            }
+
+            HStack {
+                statusBadge
+                Spacer()
+                if request.status == .pending {
+                    HStack(spacing: 12) {
+                        Button {
+                            onDecision?(.reject)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(AppTheme.Parent.danger)
+                                .font(.system(size: 22))
+                        }
+                        Button {
+                            onDecision?(.approve)
+                        } label: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(AppTheme.Parent.success)
+                                .font(.system(size: 22))
+                        }
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+        )
+    }
+
+    private var statusBadge: some View {
+        Text(request.status.label)
+            .font(AppTheme.Parent.captionFont.weight(.semibold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(colorForStatus.opacity(0.15))
+            )
+            .foregroundStyle(colorForStatus)
+    }
+
+    private var colorForStatus: Color {
+        switch request.status {
+        case .pending: return AppTheme.Parent.warning
+        case .approved: return AppTheme.Parent.success
+        case .rejected, .cancelled: return AppTheme.Parent.danger
+        }
     }
 }

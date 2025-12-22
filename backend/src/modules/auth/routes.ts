@@ -14,6 +14,12 @@ import {
   listPresetsController
 } from '../chores/controllers.js'
 import { walletBalanceController } from '../ledger/controller.js'
+import {
+  approveRequestController,
+  createRequestController,
+  listRequestsController,
+  rejectRequestController
+} from '../requests/controllers.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
@@ -52,4 +58,15 @@ export async function authRoutes(app: FastifyInstance) {
   // Wallet
   app.get('/api/wallet', walletBalanceController)
   app.get('/api/auth/wallet', walletBalanceController)
+
+  // Purchase requests (children create, parents approve/reject)
+  app.get('/api/requests', listRequestsController)
+  app.post('/api/requests', createRequestController)
+  app.post('/api/requests/:id/approve', approveRequestController)
+  app.post('/api/requests/:id/reject', rejectRequestController)
+  // compatibility prefix
+  app.get('/api/auth/requests', listRequestsController)
+  app.post('/api/auth/requests', createRequestController)
+  app.post('/api/auth/requests/:id/approve', approveRequestController)
+  app.post('/api/auth/requests/:id/reject', rejectRequestController)
 }

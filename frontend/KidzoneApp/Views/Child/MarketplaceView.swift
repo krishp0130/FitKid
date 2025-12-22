@@ -4,6 +4,7 @@ struct MarketplaceView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @State private var selectedItem: MarketplaceItem?
     @State private var showPurchaseSheet = false
+    @State private var showRequests = false
 
     var body: some View {
         NavigationView {
@@ -28,8 +29,21 @@ struct MarketplaceView: View {
             }
             .navigationTitle("Marketplace")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showRequests = true
+                    } label: {
+                        Label("My Requests", systemImage: "list.bullet.rectangle")
+                    }
+                }
+            }
             .sheet(item: $selectedItem) { item in
                 PurchaseView(item: item)
+            }
+            .sheet(isPresented: $showRequests) {
+                RequestHistoryView()
+                    .environmentObject(appState)
             }
         }
     }
@@ -99,8 +113,14 @@ struct PurchaseView: View {
     let item: MarketplaceItem
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var appState: AppStateViewModel
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var selectedPayment: PaymentMethod = .wallet
     @State private var showConfirm = false
+    @State private var link: String = ""
+    @State private var notes: String = ""
+    @State private var isSubmitting = false
+    @State private var submitError: String?
+    @State private var showSuccess = false
 
     var taxAmount: Int {
         Int(Double(item.priceCents) * appState.state.parentSettings.salesTax)
@@ -174,12 +194,39 @@ struct PurchaseView: View {
                             }
                         }
 
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Link (optional)")
+                                .font(AppTheme.Child.headlineFont)
+                                .foregroundStyle(AppTheme.Child.textPrimary)
+                            TextField("Paste Amazon link", text: $link)
+                                .textInputAutocapitalization(.never)
+                                .disableAutocorrection(true)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                                        .fill(AppTheme.Child.cardBackground.opacity(0.4))
+                                )
+                            Text("Notes to parent (optional)")
+                                .font(AppTheme.Child.headlineFont)
+                                .foregroundStyle(AppTheme.Child.textPrimary)
+                            TextField("Why do you want this?", text: $notes)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppTheme.Child.cornerRadius)
+                                        .fill(AppTheme.Child.cardBackground.opacity(0.4))
+                                )
+                        }
+
                         // Buy Button
                         Button(action: {
                             showConfirm = true
                         }) {
                             HStack {
-                                Text("Buy Now")
+                                if isSubmitting {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                                Text(isSubmitting ? "Requesting..." : "Request Approval")
                                     .font(AppTheme.Child.headlineFont)
                                 Image(systemName: "arrow.right.circle.fill")
                             }
@@ -192,6 +239,12 @@ struct PurchaseView: View {
                             )
                         }
                         .buttonStyle(ScaleButtonStyle())
+                        .disabled(isSubmitting)
+                        if let submitError {
+                            Text(submitError)
+                                .font(AppTheme.Child.captionFont)
+                                .foregroundStyle(AppTheme.Child.danger)
+                        }
                     }
                     .padding(24)
                 }
@@ -209,13 +262,40 @@ struct PurchaseView: View {
             .alert("Confirm Purchase?", isPresented: $showConfirm) {
                 Button("Cancel", role: .cancel) { }
                 Button("Buy!") {
-                    // TODO: Process purchase
-                    dismiss()
+                    Task { await submitRequest() }
                 }
             } message: {
-                Text("You're about to spend \(totalAmount.asCurrency) on \(item.name)")
+                Text("You're about to request \(totalAmount.asCurrency) for \(item.name)")
+            }
+            .alert("Request sent!", isPresented: $showSuccess) {
+                Button("OK") { dismiss() }
+            } message: {
+                Text("We sent this to your parent for approval.")
             }
         }
+    }
+
+    private func submitRequest() async {
+        guard let token = authManager.session?.accessToken else {
+            submitError = "Missing session. Please sign in again."
+            return
+        }
+        isSubmitting = true
+        submitError = nil
+        do {
+            _ = try await PurchaseRequestAPI.shared.createRequest(
+                accessToken: token,
+                title: item.name,
+                description: notes.isEmpty ? item.description : notes,
+                url: link.isEmpty ? nil : link,
+                imageUrl: nil,
+                price: Double(totalAmount) / 100.0
+            )
+            showSuccess = true
+        } catch {
+            submitError = error.localizedDescription
+        }
+        isSubmitting = false
     }
 }
 

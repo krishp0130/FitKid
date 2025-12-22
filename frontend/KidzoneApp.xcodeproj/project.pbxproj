@@ -21,6 +21,10 @@
 		63CC9B5D7E5F4FB9A7F9E1B8 /* Auth/TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E7E7A4DBD6E4A0F9E5B9C51 /* Auth/TokenStore.swift */; };
 		65F76304833E237BB61620F9 /* AppStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6581C65C3477295D3FFF47 /* AppStateViewModel.swift */; };
 		7F9410DB22AEB43279AA4864 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CA18189263CF5E50016B62 /* User.swift */; };
+		BB1111111111111111111111 /* PurchaseRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1111111111111111111111 /* PurchaseRequest.swift */; };
+		BB2222222222222222222222 /* PurchaseRequestAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2222222222222222222222 /* PurchaseRequestAPI.swift */; };
+		BB3333333333333333333333 /* RequestsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3333333333333333333333 /* RequestsViewModel.swift */; };
+		BB4444444444444444444444 /* RequestHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4444444444444444444444 /* RequestHistoryView.swift */; };
 		87A03009D5BB74CAEBD9B54B /* ChildDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B98434B956194C0C1C4B8BC2 /* ChildDashboardView.swift */; };
 		92BF2D9B61D4020D8DE04C7C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF08482F50DD5A477A0EBA6 /* MainTabView.swift */; };
 		AAAABBBBCCCCDDDDEEEEFFFF /* MoneyAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBBAAAAFFFFEEEEDDDDCCCC /* MoneyAPI.swift */; };
@@ -52,6 +56,10 @@
 		1F2E3D4C5B6A497E8F6B1A2C /* AuthSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionResponse.swift; sourceTree = "<group>"; };
 		2D7D8E9204D14F81A7E2DFA9 /* Auth/AppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AppleSignInService.swift; sourceTree = "<group>"; };
 		365160D4F0ECEB31CC0E99E6 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
+		AA1111111111111111111111 /* PurchaseRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRequest.swift; sourceTree = "<group>"; };
+		AA2222222222222222222222 /* PurchaseRequestAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRequestAPI.swift; sourceTree = "<group>"; };
+		AA3333333333333333333333 /* RequestsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestsViewModel.swift; sourceTree = "<group>"; };
+		AA4444444444444444444444 /* RequestHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestHistoryView.swift; sourceTree = "<group>"; };
 		4F0F2E5D1B5B4B65A6E4E7F0 /* Auth/AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/AuthAPI.swift; sourceTree = "<group>"; };
 		511C76102EF52E37009EB6A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		511C76122EF6CBD0009EB6A3 /* multipleSimulatorsStartup.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = multipleSimulatorsStartup.sh; sourceTree = "<group>"; };
@@ -101,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				0F6581C65C3477295D3FFF47 /* AppStateViewModel.swift */,
+				AA3333333333333333333333 /* RequestsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -145,6 +154,7 @@
 				83CA18189263CF5E50016B62 /* User.swift */,
 				1F2E3D4C5B6A497E8F6B1A2C /* AuthSessionResponse.swift */,
 				A1A3E9BE7A864F5E83E78A2F /* AuthSession.swift */,
+				AA1111111111111111111111 /* PurchaseRequest.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -156,6 +166,7 @@
 				53F5569F8533BE2CA35B8DF2 /* ParentChoresView.swift */,
 				EE7649654D8D8B3ACEC51D26 /* ParentDashboardView.swift */,
 				1ABA75B8AEF11F5F5507109A /* ParentSettingsView.swift */,
+				AA4444444444444444444444 /* RequestHistoryView.swift */,
 			);
 			path = Parent;
 			sourceTree = "<group>";
@@ -224,6 +235,7 @@
 				7E7E7A4DBD6E4A0F9E5B9C51 /* Auth/TokenStore.swift */,
 				1E2F3A4B5C6D7E8F9A0B1C2D /* ChoreAPI.swift */,
 				BBBBAAAAFFFFEEEEDDDDCCCC /* MoneyAPI.swift */,
+				AA2222222222222222222222 /* PurchaseRequestAPI.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -328,6 +340,7 @@
 				E04E62B6F7D349A3B5D5C6A1 /* OnboardingView.swift in Sources */,
 				089A88DEC0085CF56D63D346 /* CreditCardsView.swift in Sources */,
 				5806C0EC0FAB81802ABE5878 /* DataModels.swift in Sources */,
+				BB1111111111111111111111 /* PurchaseRequest.swift in Sources */,
 				B410FC1284815990B937416D /* KidzoneApp.swift in Sources */,
 				92BF2D9B61D4020D8DE04C7C /* MainTabView.swift in Sources */,
 				E50CBEF505507C3560361616 /* MarketplaceView.swift in Sources */,
@@ -336,7 +349,9 @@
 				445078056571B72688075835 /* ParentDashboardView.swift in Sources */,
 				DD107931C65761C32BDC845B /* ParentSettingsView.swift in Sources */,
 				AAAABBBBCCCCDDDDEEEEFFFF /* MoneyAPI.swift in Sources */,
+				BB2222222222222222222222 /* PurchaseRequestAPI.swift in Sources */,
 				1A2B3C4D5E6F7A8B9C0D1E2F /* ChoreAPI.swift in Sources */,
+				BB4444444444444444444444 /* RequestHistoryView.swift in Sources */,
 				51CA85677D57B2F8FA94784A /* ProfileView.swift in Sources */,
 				626C39FD18533E92B466EEBA /* RoleSelectionView.swift in Sources */,
 				F692ECD2E32A6A1FE403198D /* RootView.swift in Sources */,
@@ -344,6 +359,7 @@
 				63CC9B5D7E5F4FB9A7F9E1B8 /* Auth/TokenStore.swift in Sources */,
 				0F3C6B7CB2E74E43A7BF7984 /* Auth/GoogleSignInService.swift in Sources */,
 				7F9410DB22AEB43279AA4864 /* User.swift in Sources */,
+				BB3333333333333333333333 /* RequestsViewModel.swift in Sources */,
 				CB6FBB2D9DAA0A1241C73C05 /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
