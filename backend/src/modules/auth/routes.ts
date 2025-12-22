@@ -20,6 +20,17 @@ import {
   listRequestsController,
   rejectRequestController
 } from '../requests/controllers.js'
+import {
+  getCreditScoreController,
+  listCreditCardsController,
+  applyCreditCardController,
+  makePurchaseController,
+  makePaymentController,
+  getTransactionsController,
+  checkUpgradeController,
+  upgradeTierController,
+  approveCardController
+} from '../credit/controllers.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
@@ -69,4 +80,15 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/requests', createRequestController)
   app.post('/api/auth/requests/:id/approve', approveRequestController)
   app.post('/api/auth/requests/:id/reject', rejectRequestController)
+
+  // Credit System
+  app.get('/api/credit/score', getCreditScoreController)
+  app.get('/api/credit/cards', listCreditCardsController)
+  app.post('/api/credit/apply', applyCreditCardController)
+  app.post('/api/credit/purchase', makePurchaseController)
+  app.post('/api/credit/payment', makePaymentController)
+  app.get('/api/credit/transactions/:cardId', getTransactionsController)
+  app.get('/api/credit/upgrade/:cardId', checkUpgradeController)
+  app.post('/api/credit/upgrade/:cardId', upgradeTierController)
+  app.post('/api/credit/approve/:cardId', approveCardController)
 }
