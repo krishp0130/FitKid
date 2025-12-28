@@ -118,3 +118,4 @@ export const CREDIT_SETTINGS_DEFAULTS = {
   minimum_age_for_credit: 7
 }
 
+

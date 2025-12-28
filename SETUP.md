@@ -293,3 +293,4 @@ After setup is complete:
 - [ ] Test tab switching (should be instant with cache)
 - [ ] Explore marketplace and credit features
 
+

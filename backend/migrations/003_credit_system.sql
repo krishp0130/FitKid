@@ -82,3 +82,4 @@ CREATE POLICY "Users can insert their own credit payments"
   ON credit_payments FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+

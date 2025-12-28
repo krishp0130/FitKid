@@ -24,6 +24,11 @@ class AppStateViewModel: ObservableObject {
         }
     }
 
+    @MainActor
+    func updateParentSettings(_ settings: ParentSettings) {
+        state.parentSettings = settings
+    }
+
     // MARK: - Chores (API)
     @MainActor
     func setChores(_ chores: [Chore]) {

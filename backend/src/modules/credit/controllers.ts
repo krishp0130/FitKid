@@ -374,3 +374,4 @@ export async function approveCardController(request: FastifyRequest, reply: Fast
 // Import supabaseDb for approve controller
 import { supabaseDb } from '../../config/supabase.js'
 
+

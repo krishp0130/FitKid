@@ -75,10 +75,13 @@ struct ParentChoresView: View {
                 // EditChoreView(chore: chore)
                 Text("Edit: \(chore.title)") // Temporary placeholder
             }
-            .task {
-                await loadChores(showLoading: true)
-            }
             .onAppear {
+                if !hasLoadedOnce {
+                    Task { await loadChores(showLoading: true) }
+                    hasLoadedOnce = true
+                } else {
+                    Task { await loadChores(showLoading: false) }
+                }
                 // Auto-refresh every 1 second (silently in background)
                 refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
                     Task {

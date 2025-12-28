@@ -32,3 +32,4 @@ export async function creditRoutes(app: FastifyInstance) {
   app.post('/api/credit/approve/:cardId', approveCardController)
 }
 
+

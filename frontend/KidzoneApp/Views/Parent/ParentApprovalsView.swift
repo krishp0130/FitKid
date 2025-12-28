@@ -5,6 +5,7 @@ struct ParentApprovalsView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @StateObject private var requestsVM = RequestsViewModel()
     @State private var isRefreshing = false
+    @State private var selectedSegment: ApprovalSegment = .pending
 
     var body: some View {
         NavigationView {
@@ -42,41 +43,80 @@ struct ParentApprovalsView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(AppTheme.Parent.primary)
             }
-        } else if requestsVM.requests.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "cart")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.5))
-                Text("No requests yet")
-                    .font(AppTheme.Parent.titleFont)
-                    .foregroundStyle(AppTheme.Parent.textPrimary)
-                Text("Kids can request items and they will appear here for approval.")
-                    .font(AppTheme.Parent.bodyFont)
-                    .foregroundStyle(AppTheme.Parent.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
-            .padding()
         } else {
-            List {
-                ForEach(requestsVM.requests) { request in
-                    RequestRow(request: request) { action in
-                        Task { await handle(action: action, for: request) }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Picker("Approvals", selection: $selectedSegment) {
+                        Text("Active").tag(ApprovalSegment.pending)
+                        Text("Approved").tag(ApprovalSegment.approved)
                     }
-                    .listRowBackground(Color.clear)
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 4)
+
+                    if requestsVM.requests.isEmpty {
+                        VStack(spacing: 16) {
+                            Image(systemName: "cart")
+                                .font(.system(size: 64))
+                                .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.5))
+                            Text("No requests yet")
+                                .font(AppTheme.Parent.titleFont)
+                                .foregroundStyle(AppTheme.Parent.textPrimary)
+                            Text("Kids can request items and they will appear here for approval.")
+                                .font(AppTheme.Parent.bodyFont)
+                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    } else {
+                        VStack(spacing: AppTheme.Parent.cardSpacing) {
+                            ForEach(filteredRequests) { request in
+                                RequestRow(request: request) { action in
+                                    Task { await handle(action: action, for: request) }
+                                }
+                            }
+
+                            if filteredRequests.isEmpty {
+                                Text(emptyMessage)
+                                    .font(AppTheme.Parent.bodyFont)
+                                    .foregroundStyle(AppTheme.Parent.textSecondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
+                            }
+                        }
+                    }
                 }
+                .padding(.horizontal, AppTheme.Parent.screenPadding)
+                .padding(.top, 12)
+                .padding(.bottom, AppTheme.Parent.screenPadding)
             }
-            .listStyle(.insetGrouped)
-            .applyScrollContentBackgroundHidden()
-            .background(Color.clear)
         }
     }
 
+    private var filteredRequests: [PurchaseRequest] {
+        switch selectedSegment {
+        case .pending:
+            return requestsVM.requests.filter { $0.status == .pending }
+        case .approved:
+            return requestsVM.requests.filter { $0.status == .approved }
+        }
+    }
+
+    private var emptyMessage: String {
+        switch selectedSegment {
+        case .pending:
+            return "No active requests right now."
+        case .approved:
+            return "No approved requests yet."
+        }
+    }
+    
     private func load(force: Bool) async {
         guard let token = authManager.session?.accessToken else { return }
         await requestsVM.load(accessToken: token, force: force, showLoading: true)
     }
-
+    
     private func handle(action: ApprovalAction, for request: PurchaseRequest) async {
         guard let token = authManager.session?.accessToken else { return }
         switch action {
@@ -89,17 +129,11 @@ struct ParentApprovalsView: View {
     }
 }
 
-// MARK: - Compatibility Helpers
-
-private extension View {
-    @ViewBuilder
-    func applyScrollContentBackgroundHidden() -> some View {
-        if #available(iOS 16.0, *) {
-            self.scrollContentBackground(.hidden)
-        } else {
-            self
-        }
-    }
+enum ApprovalSegment: String, CaseIterable, Identifiable {
+    case pending
+    case approved
+    
+    var id: String { rawValue }
 }
 
 struct RequestRow: View {
@@ -158,6 +192,10 @@ struct RequestRow: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                )
         )
     }
 

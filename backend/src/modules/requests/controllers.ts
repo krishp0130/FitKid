@@ -54,7 +54,7 @@ export async function listRequestsController(request: FastifyRequest, reply: Fas
   try {
     const records = await fetchRequestsForUser(caller.id, caller.role as any, caller.family_id)
     const payload = records.map(toView)
-    await cacheService.set(cacheKey, payload, { ttl: 10 })
+    await cacheService.set(cacheKey, payload, { ttl: 1 })
     return reply.send({ requests: payload })
   } catch (err: any) {
     request.log.error({ err }, 'Failed to fetch purchase requests')
