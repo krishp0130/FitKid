@@ -250,21 +250,35 @@ struct ParentDashboardView: View {
                             .foregroundStyle(AppTheme.Parent.warning)
                     }
                     ForEach(pendingRequests.prefix(3)) { req in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
                                 Text(req.title)
                                     .font(AppTheme.Parent.bodyFont.weight(.semibold))
                                     .foregroundStyle(AppTheme.Parent.textPrimary)
+                                Spacer()
+                                Text(req.priceFormatted)
+                                    .font(AppTheme.Parent.bodyFont.weight(.bold))
+                                    .foregroundStyle(AppTheme.Parent.success)
+                            }
+                            HStack(spacing: 8) {
+                                if let method = req.paymentMethod {
+                                    Label(methodLabel(method), systemImage: methodIcon(method))
+                                        .labelStyle(.titleAndIcon)
+                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                                }
+                                if let card = req.cardName {
+                                    Text("• \(card)")
+                                        .font(AppTheme.Parent.captionFont)
+                                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                                }
+                                Spacer()
                                 if let requester = req.requesterName {
                                     Text("From: \(requester)")
                                         .font(AppTheme.Parent.captionFont)
                                         .foregroundStyle(AppTheme.Parent.textSecondary)
                                 }
                             }
-                            Spacer()
-                            Text(req.priceFormatted)
-                                .font(AppTheme.Parent.bodyFont.weight(.bold))
-                                .foregroundStyle(AppTheme.Parent.success)
                         }
                         .padding(10)
                         .background(
@@ -463,12 +477,13 @@ private extension ParentDashboardView {
             let statusText = req.status.label
             let icon: String
             let color: Color
+            let isCardApp = req.paymentMethod == "CREDIT_CARD_APPLICATION"
             switch req.status {
             case .pending:
-                icon = "hourglass"
+                icon = isCardApp ? "creditcard.fill" : "hourglass"
                 color = AppTheme.Parent.warning
             case .approved:
-                icon = "checkmark.circle.fill"
+                icon = isCardApp ? "checkmark.seal.fill" : "checkmark.circle.fill"
                 color = AppTheme.Parent.success
             case .rejected, .cancelled:
                 icon = "xmark.circle.fill"
@@ -477,16 +492,33 @@ private extension ParentDashboardView {
             let subtitle = req.requesterName.flatMap { "From: \($0)" }
             let item = ActivityItem(
                 id: req.id,
-                title: "\(statusText): \(req.title)",
+                title: "\(isCardApp ? "Card App" : statusText): \(req.title)",
                 subtitle: subtitle,
                 timeAgo: timeAgo(from: date),
                 icon: icon,
                 color: color,
-                trailing: req.priceFormatted
+                trailing: req.paymentMethod == "CREDIT_CARD_APPLICATION" ? nil : req.priceFormatted
             )
             return (date, item)
         }
         return items.sorted { $0.0 > $1.0 }.prefix(5).map { $0.1 }
+    }
+
+    private func methodLabel(_ raw: String) -> String {
+        switch raw {
+        case "CREDIT": return "Credit Card"
+        case "WALLET": return "Wallet"
+        case "CREDIT_CARD_APPLICATION": return "Card Application"
+        default: return raw
+        }
+    }
+
+    private func methodIcon(_ raw: String) -> String {
+        switch raw {
+        case "CREDIT", "CREDIT_CARD_APPLICATION": return "creditcard.fill"
+        case "WALLET": return "wallet.pass.fill"
+        default: return "circle.fill"
+        }
     }
     
     func timeAgo(from date: Date) -> String {

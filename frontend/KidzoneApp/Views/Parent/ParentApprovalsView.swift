@@ -147,6 +147,19 @@ struct RequestRow: View {
                     Text(request.title)
                         .font(AppTheme.Parent.headlineFont)
                         .foregroundStyle(AppTheme.Parent.textPrimary)
+                    if let method = request.paymentMethod {
+                        HStack(spacing: 6) {
+                            Label(methodLabel(method), systemImage: methodIcon(method))
+                                .labelStyle(.titleAndIcon)
+                                .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                            if let card = request.cardName {
+                                Text("• \(card)")
+                                    .font(AppTheme.Parent.captionFont)
+                                    .foregroundStyle(AppTheme.Parent.textSecondary)
+                            }
+                        }
+                    }
                     if let requester = request.requesterName {
                         Text("From: \(requester)")
                             .font(AppTheme.Parent.captionFont)
@@ -241,6 +254,14 @@ struct RequestRow: View {
         case "WALLET": return "Wallet"
         case "CREDIT_CARD_APPLICATION": return "Card Application"
         default: return raw
+        }
+    }
+
+    private func methodIcon(_ raw: String) -> String {
+        switch raw {
+        case "CREDIT", "CREDIT_CARD_APPLICATION": return "creditcard.fill"
+        case "WALLET": return "wallet.pass.fill"
+        default: return "circle.fill"
         }
     }
 }
