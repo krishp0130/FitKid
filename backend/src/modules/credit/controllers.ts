@@ -124,6 +124,22 @@ export async function applyCreditCardController(request: FastifyRequest, reply: 
 
   try {
     const card = await applyForCreditCard(caller.id, requestedTier as CreditTier | undefined)
+    // Create a purchase request so parent sees the application
+    await createPurchaseRequest({
+      familyId: caller.family_id,
+      requesterId: caller.id,
+      requesterName: caller.username,
+      title: 'Credit Card Application',
+      description: `Requested tier: ${card.tier}`,
+      url: null,
+      imageUrl: null,
+      priceDollars: 0,
+      paymentMethod: 'CREDIT_CARD_APPLICATION',
+      cardId: card.id,
+      cardName: card.card_name
+    })
+    // Invalidate family requests cache
+    await cacheService.delete(cacheService.keys.familyRequests(caller.family_id))
     
     return reply.code(201).send({
       card: {
@@ -134,7 +150,12 @@ export async function applyCreditCardController(request: FastifyRequest, reply: 
         balance: card.balance_cents / 100,
         apr: card.apr,
         rewardsRate: card.rewards_rate,
-        status: card.status
+        status: card.status,
+        openedAt: card.opened_at,
+        lastPaymentAt: card.last_payment_at,
+        utilization: card.limit_cents > 0 
+          ? Math.round((card.balance_cents / card.limit_cents) * 100)
+          : 0
       },
       message: 'Credit card application submitted! Awaiting parent approval.'
     })

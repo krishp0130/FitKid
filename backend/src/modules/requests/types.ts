@@ -10,6 +10,9 @@ export interface PurchaseRequestRecord {
   url: string | null
   image_url: string | null
   price_cents: number
+  payment_method?: string | null
+  card_id?: string | null
+  card_name?: string | null
   status: RequestStatus
   created_at: string
   decided_at: string | null
@@ -24,6 +27,9 @@ export interface PurchaseRequestView {
   imageUrl: string | null
   price: number // dollars for the client
   priceCents: number
+  paymentMethod?: string | null
+  cardId?: string | null
+  cardName?: string | null
   status: RequestStatus
   requesterId: string
   requesterName?: string | null

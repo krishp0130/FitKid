@@ -10,6 +10,9 @@ interface CreateRequestInput {
   url?: string | null
   imageUrl?: string | null
   priceDollars: number
+  paymentMethod?: string | null
+  cardId?: string | null
+  cardName?: string | null
 }
 
 export async function createPurchaseRequest(input: CreateRequestInput): Promise<PurchaseRequestRecord> {
@@ -22,7 +25,10 @@ export async function createPurchaseRequest(input: CreateRequestInput): Promise<
     url: input.url ?? null,
     image_url: input.imageUrl ?? null,
     price_cents,
-    status: 'PENDING' as RequestStatus
+    status: 'PENDING' as RequestStatus,
+    payment_method: input.paymentMethod ?? null,
+    card_id: input.cardId ?? null,
+    card_name: input.cardName ?? null
   }
 
   const { data, error } = await supabaseDb
@@ -104,6 +110,9 @@ export function mapRecord(record: any): PurchaseRequestRecord {
     url: record.url,
     image_url: record.image_url,
     price_cents: record.price_cents,
+    payment_method: record.payment_method ?? null,
+    card_id: record.card_id ?? null,
+    card_name: record.card_name ?? null,
     status: record.status,
     created_at: record.created_at,
     decided_at: record.decided_at ?? null,
@@ -120,6 +129,9 @@ export function toView(record: PurchaseRequestRecord): PurchaseRequestView {
     imageUrl: record.image_url,
     price: record.price_cents / 100,
     priceCents: record.price_cents,
+    paymentMethod: record.payment_method ?? null,
+    cardId: record.card_id ?? null,
+    cardName: record.card_name ?? null,
     status: record.status,
     requesterId: record.requester_id,
     requesterName: record.requester_name,

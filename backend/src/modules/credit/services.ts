@@ -182,6 +182,19 @@ async function getCurrentCardTier(cardId: string): Promise<CreditTier> {
  * Apply for a new credit card
  */
 export async function applyForCreditCard(userId: string, requestedTier?: CreditTier) {
+  // Rate limit: only one application per 24h
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: recent } = await supabaseDb
+    .from('credit_cards')
+    .select('id, created_at')
+    .eq('user_id', userId)
+    .gte('created_at', oneDayAgo)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  if (recent && recent.length > 0) {
+    throw new Error('You can apply for a new card once every 24 hours.')
+  }
+
   // Calculate what tier they qualify for
   const scoreFactors = await calculateCreditScore(userId)
   const qualifiedTier = determineTier(scoreFactors.total_score)

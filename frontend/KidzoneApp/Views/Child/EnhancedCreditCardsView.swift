@@ -494,10 +494,18 @@ struct ApplyCardView: View {
             await appState.fetchCreditCards(accessToken: token, force: true)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = cleanError(error.localizedDescription)
             isApplying = false
         }
     }
+}
+
+private func cleanError(_ message: String) -> String {
+    var output = message
+    output = output.replacingOccurrences(of: "[", with: "")
+    output = output.replacingOccurrences(of: "]", with: "")
+    output = output.replacingOccurrences(of: "\"", with: "")
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
 struct TierInfoRow: View {

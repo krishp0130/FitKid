@@ -187,6 +187,22 @@ struct RequestRow: View {
                     }
                 }
             }
+            
+            if let method = request.paymentMethod {
+                HStack(spacing: 6) {
+                    Text("Payment:")
+                        .font(AppTheme.Parent.captionFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                    Text(methodLabel(method))
+                        .font(AppTheme.Parent.captionFont.weight(.semibold))
+                        .foregroundStyle(AppTheme.Parent.textPrimary)
+                    if let card = request.cardName {
+                        Text("• \(card)")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                }
+            }
         }
         .padding(12)
         .background(
@@ -216,6 +232,15 @@ struct RequestRow: View {
         case .pending: return AppTheme.Parent.warning
         case .approved: return AppTheme.Parent.success
         case .rejected, .cancelled: return AppTheme.Parent.danger
+        }
+    }
+    
+    private func methodLabel(_ raw: String) -> String {
+        switch raw {
+        case "CREDIT": return "Credit Card"
+        case "WALLET": return "Wallet"
+        case "CREDIT_CARD_APPLICATION": return "Card Application"
+        default: return raw
         }
     }
 }

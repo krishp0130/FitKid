@@ -11,7 +11,7 @@ struct CreditCard: Identifiable, Codable {
     let balance: Double
     let apr: Double
     let rewardsRate: Double
-    let openedAt: String
+    let openedAt: String?
     let lastPaymentAt: String?
     let status: CreditCardStatus
     let utilization: Int

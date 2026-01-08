@@ -47,7 +47,7 @@ final class PurchaseRequestAPI {
         }
     }
 
-    func createRequest(accessToken: String, title: String, description: String?, url: String?, imageUrl: String?, price: Double) async throws -> PurchaseRequest {
+    func createRequest(accessToken: String, title: String, description: String?, url: String?, imageUrl: String?, price: Double, paymentMethod: String? = nil, cardId: String? = nil, cardName: String? = nil) async throws -> PurchaseRequest {
         guard let endpoint = URL(string: baseURLString) else { throw PurchaseRequestAPIError.invalidURL }
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
@@ -58,7 +58,10 @@ final class PurchaseRequestAPI {
             "description": description,
             "url": url,
             "imageUrl": imageUrl,
-            "price": price
+            "price": price,
+            "paymentMethod": paymentMethod,
+            "cardId": cardId,
+            "cardName": cardName
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body.compactMapValues { $0 })
         let (data, response) = try await session.data(for: request)

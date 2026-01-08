@@ -127,6 +127,7 @@ struct PurchaseView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var selectedPayment: PaymentMethod = .wallet
+    @State private var selectedCardId: String?
     @State private var showConfirm = false
     @State private var link: String = ""
     @State private var notes: String = ""
@@ -203,6 +204,23 @@ struct PurchaseView: View {
                                 isSelected: selectedPayment == .credit
                             ) {
                                 selectedPayment = .credit
+                                selectedCardId = appState.creditCards.first(where: { $0.isActive })?.id
+                            }
+                            
+                            if selectedPayment == .credit {
+                                if appState.creditCards.isEmpty {
+                                    Text("No active cards available. Apply first.")
+                                        .font(AppTheme.Child.captionFont)
+                                        .foregroundStyle(AppTheme.Child.danger)
+                                } else {
+                                    Picker("Select Card", selection: $selectedCardId) {
+                                        ForEach(appState.creditCards.filter { $0.isActive }) { card in
+                                            Text(card.cardName).tag(Optional(card.id))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    .frame(maxHeight: 120)
+                                }
                             }
                         }
 
@@ -295,13 +313,17 @@ struct PurchaseView: View {
         isSubmitting = true
         submitError = nil
         do {
+            let cardName = appState.creditCards.first(where: { $0.id == selectedCardId })?.cardName
             _ = try await PurchaseRequestAPI.shared.createRequest(
                 accessToken: token,
                 title: item.name,
                 description: notes.isEmpty ? item.description : notes,
                 url: link.isEmpty ? nil : link,
                 imageUrl: nil,
-                price: Double(totalAmount) / 100.0
+                price: Double(totalAmount) / 100.0,
+                paymentMethod: selectedPayment == .credit ? "CREDIT" : "WALLET",
+                cardId: selectedPayment == .credit ? selectedCardId : nil,
+                cardName: selectedPayment == .credit ? cardName : nil
             )
             showSuccess = true
         } catch {
@@ -333,6 +355,8 @@ struct CustomRequestView: View {
     @State private var isSubmitting = false
     @State private var submitError: String?
     @State private var showSuccess = false
+    @State private var selectedPayment: PaymentMethod = .wallet
+    @State private var selectedCardId: String?
     
     private var priceCents: Int {
         guard let dollars = Double(priceInput) else { return 0 }
@@ -389,6 +413,27 @@ struct CustomRequestView: View {
                 }
                 
                 Section {
+                    Picker("Payment Method", selection: $selectedPayment) {
+                        Text("Wallet").tag(PaymentMethod.wallet)
+                        Text("Credit Card").tag(PaymentMethod.credit)
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    if selectedPayment == .credit {
+                        if appState.creditCards.isEmpty {
+                            Text("No active cards available. Apply first.")
+                                .foregroundStyle(AppTheme.Child.danger)
+                        } else {
+                            Picker("Select Card", selection: $selectedCardId) {
+                                ForEach(appState.creditCards.filter { $0.isActive }) { card in
+                                    Text(card.cardName).tag(Optional(card.id))
+                                }
+                            }
+                            .pickerStyle(.wheel)
+                            .frame(maxHeight: 120)
+                        }
+                    }
+                    
                     Button {
                         Task { await submitRequest() }
                     } label: {
@@ -435,13 +480,17 @@ struct CustomRequestView: View {
         isSubmitting = true
         submitError = nil
         do {
+            let cardName = appState.creditCards.first(where: { $0.id == selectedCardId })?.cardName
             _ = try await PurchaseRequestAPI.shared.createRequest(
                 accessToken: token,
                 title: trimmedTitle,
                 description: notes.isEmpty ? nil : notes,
                 url: link.isEmpty ? nil : link,
                 imageUrl: nil,
-                price: Double(totalCents) / 100.0
+                price: Double(totalCents) / 100.0,
+                paymentMethod: selectedPayment == .credit ? "CREDIT" : "WALLET",
+                cardId: selectedPayment == .credit ? selectedCardId : nil,
+                cardName: selectedPayment == .credit ? cardName : nil
             )
             showSuccess = true
         } catch {
