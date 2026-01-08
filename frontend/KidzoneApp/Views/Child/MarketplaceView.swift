@@ -5,6 +5,7 @@ struct MarketplaceView: View {
     @State private var selectedItem: MarketplaceItem?
     @State private var showPurchaseSheet = false
     @State private var showRequests = false
+    @State private var showCustomRequest = false
 
     var body: some View {
         NavigationView {
@@ -37,12 +38,23 @@ struct MarketplaceView: View {
                         Label("My Requests", systemImage: "list.bullet.rectangle")
                     }
                 }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        showCustomRequest = true
+                    } label: {
+                        Label("New Request", systemImage: "plus.circle")
+                    }
+                }
             }
             .sheet(item: $selectedItem) { item in
                 PurchaseView(item: item)
             }
             .sheet(isPresented: $showRequests) {
                 RequestHistoryView()
+                    .environmentObject(appState)
+            }
+            .sheet(isPresented: $showCustomRequest) {
+                CustomRequestView()
                     .environmentObject(appState)
             }
         }
@@ -290,6 +302,138 @@ struct PurchaseView: View {
                 url: link.isEmpty ? nil : link,
                 imageUrl: nil,
                 price: Double(totalAmount) / 100.0
+            )
+            showSuccess = true
+        } catch {
+            submitError = error.localizedDescription
+        }
+        isSubmitting = false
+    }
+}
+
+// MARK: - Custom Request
+
+struct CustomRequestView: View {
+    @EnvironmentObject var appState: AppStateViewModel
+    @EnvironmentObject var authManager: AuthenticationManager
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var title: String = ""
+    @State private var link: String = ""
+    @State private var notes: String = ""
+    @State private var priceInput: String = ""
+    @State private var isSubmitting = false
+    @State private var submitError: String?
+    @State private var showSuccess = false
+    
+    private var priceCents: Int {
+        guard let dollars = Double(priceInput) else { return 0 }
+        return Int((dollars * 100).rounded())
+    }
+    
+    private var taxCents: Int {
+        Int(Double(priceCents) * appState.state.parentSettings.salesTax)
+    }
+    
+    private var totalCents: Int {
+        priceCents + taxCents
+    }
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Item") {
+                    TextField("What do you want?", text: $title)
+                    TextField("Price (e.g. 19.99)", text: $priceInput)
+                        .keyboardType(.decimalPad)
+                    TextField("Link (optional)", text: $link)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                    TextField("Notes to parent (optional)", text: $notes)
+                }
+                
+                Section("Summary") {
+                    HStack {
+                        Text("Price")
+                        Spacer()
+                        Text(priceCents.asCurrency)
+                    }
+                    HStack {
+                        Text("Tax (\(Int(appState.state.parentSettings.salesTax * 100))%)")
+                        Spacer()
+                        Text(taxCents.asCurrency)
+                    }
+                    HStack {
+                        Text("Total")
+                            .font(.headline)
+                        Spacer()
+                        Text(totalCents.asCurrency)
+                            .font(.headline)
+                            .foregroundStyle(AppTheme.Child.accent)
+                    }
+                }
+                
+                if let submitError {
+                    Section {
+                        Text(submitError)
+                            .foregroundStyle(AppTheme.Child.danger)
+                    }
+                }
+                
+                Section {
+                    Button {
+                        Task { await submitRequest() }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("Send to Parent")
+                                .font(.headline)
+                        }
+                    }
+                    .disabled(isSubmitting || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || priceCents <= 0)
+                }
+            }
+            .navigationTitle("New Request")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .alert("Request sent!", isPresented: $showSuccess) {
+                Button("OK") { dismiss() }
+            } message: {
+                Text("We sent this to your parent for approval.")
+            }
+        }
+    }
+    
+    private func submitRequest() async {
+        guard let token = authManager.session?.accessToken else {
+            submitError = "Missing session. Please sign in again."
+            return
+        }
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else {
+            submitError = "Title required"
+            return
+        }
+        guard priceCents > 0 else {
+            submitError = "Enter a valid price"
+            return
+        }
+        
+        isSubmitting = true
+        submitError = nil
+        do {
+            _ = try await PurchaseRequestAPI.shared.createRequest(
+                accessToken: token,
+                title: trimmedTitle,
+                description: notes.isEmpty ? nil : notes,
+                url: link.isEmpty ? nil : link,
+                imageUrl: nil,
+                price: Double(totalCents) / 100.0
             )
             showSuccess = true
         } catch {

@@ -31,7 +31,7 @@ struct CreditCard: Identifiable, Codable {
     var isPending: Bool { status == .pendingApproval }
 }
 
-enum CreditTier: String, Codable {
+enum CreditTier: String, Codable, CaseIterable {
     case starter = "STARTER"
     case builder = "BUILDER"
     case strong = "STRONG"

@@ -7,6 +7,7 @@ struct EnhancedCreditCardsView: View {
     @State private var showPaymentSheet = false
     @State private var showApplySheet = false
     @State private var isLoading = true
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationView {
@@ -22,6 +23,13 @@ struct EnhancedCreditCardsView: View {
                         }
                         
                         // Cards Section
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .font(AppTheme.Child.captionFont)
+                                .foregroundStyle(AppTheme.Child.danger)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
                         if appState.creditCards.isEmpty {
                             emptyStateView
                         } else {
@@ -80,6 +88,8 @@ struct EnhancedCreditCardsView: View {
             }
             .sheet(isPresented: $showApplySheet) {
                 ApplyCardView()
+                    .environmentObject(appState)
+                    .environmentObject(authManager)
             }
         }
     }
@@ -417,6 +427,7 @@ struct ApplyCardView: View {
     
     @State private var isApplying = false
     @State private var errorMessage: String?
+    @State private var selectedTier: CreditTier = .starter
     
     var body: some View {
         NavigationView {
@@ -428,6 +439,13 @@ struct ApplyCardView: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .padding()
+                
+                Picker("Preferred Tier", selection: $selectedTier) {
+                    ForEach(CreditTier.allCases, id: \.self) { tier in
+                        Text(tier.displayName).tag(tier)
+                    }
+                }
+                .pickerStyle(.segmented)
                 
                 // Show tier info
                 VStack(alignment: .leading, spacing: 16) {
@@ -472,7 +490,8 @@ struct ApplyCardView: View {
         errorMessage = nil
         
         do {
-            try await appState.applyForCreditCard(accessToken: token)
+            try await appState.applyForCreditCard(accessToken: token, tier: selectedTier)
+            await appState.fetchCreditCards(accessToken: token, force: true)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

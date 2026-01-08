@@ -172,6 +172,8 @@ class AppStateViewModel: ObservableObject {
             self.creditCards.insert(card, at: 0)
             self.lastCreditFetch = Date()
         }
+        // Fetch latest state to ensure pending cards are synced (and visible to parent)
+        await fetchCreditCards(accessToken: accessToken, force: true)
     }
     
     func makePayment(accessToken: String, cardId: String, amount: Double) async throws {
