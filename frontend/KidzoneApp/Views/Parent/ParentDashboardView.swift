@@ -30,6 +30,10 @@ struct ParentDashboardView: View {
                             familyCodeCard
                         }
 
+                        if !pendingCardApplications.isEmpty {
+                            cardApplicationsCard
+                        }
+
                         // Family Overview
                         familyOverviewCard
 
@@ -237,7 +241,7 @@ struct ParentDashboardView: View {
                     .padding(.vertical, 20)
             }
             
-            if !pendingRequests.isEmpty {
+            if !pendingPurchaseRequests.isEmpty {
                 Divider()
                     .overlay(AppTheme.Parent.textSecondary.opacity(0.2))
                 VStack(alignment: .leading, spacing: 12) {
@@ -245,11 +249,11 @@ struct ParentDashboardView: View {
                         Text("Purchase Requests")
                             .font(AppTheme.Parent.bodyFont.weight(.semibold))
                         Spacer()
-                        Text("\(pendingRequests.count)")
+                        Text("\(pendingPurchaseRequests.count)")
                             .font(AppTheme.Parent.captionFont.weight(.bold))
                             .foregroundStyle(AppTheme.Parent.warning)
                     }
-                    ForEach(pendingRequests.prefix(3)) { req in
+                    ForEach(pendingPurchaseRequests.prefix(3)) { req in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text(req.title)
@@ -291,6 +295,65 @@ struct ParentDashboardView: View {
                         )
                     }
                 }
+            }
+        }
+        .padding(AppTheme.Parent.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                        .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+
+    private var cardApplicationsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Card Applications")
+                    .font(AppTheme.Parent.headlineFont)
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
+
+                Spacer()
+
+                Text("\(pendingCardApplications.count)")
+                    .font(AppTheme.Parent.titleFont.weight(.bold))
+                    .foregroundStyle(AppTheme.Parent.warning)
+            }
+
+            ForEach(pendingCardApplications.prefix(3)) { request in
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label(request.cardName ?? "Credit Card", systemImage: "creditcard.fill")
+                            .labelStyle(.titleAndIcon)
+                            .font(AppTheme.Parent.bodyFont.weight(.semibold))
+                            .foregroundStyle(AppTheme.Parent.textPrimary)
+                        Spacer()
+                        Text("Pending")
+                            .font(AppTheme.Parent.captionFont.weight(.semibold))
+                            .foregroundStyle(AppTheme.Parent.warning)
+                    }
+                    if let description = request.description, !description.isEmpty {
+                        Text(description)
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                    if let requester = request.requesterName {
+                        Text("From: \(requester)")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                    }
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                        .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                                .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                        )
+                )
             }
         }
         .padding(AppTheme.Parent.cardPadding)
@@ -462,12 +525,20 @@ private extension ParentDashboardView {
         appState.state.chores.filter { $0.status == .pendingApproval }
     }
     
-    var pendingRequests: [PurchaseRequest] {
-        requestsVM.requests.filter { $0.status == .pending }
+    var pendingCardApplications: [PurchaseRequest] {
+        requestsVM.requests.filter {
+            $0.status == .pending && $0.paymentMethod == "CREDIT_CARD_APPLICATION"
+        }
+    }
+
+    var pendingPurchaseRequests: [PurchaseRequest] {
+        requestsVM.requests.filter {
+            $0.status == .pending && $0.paymentMethod != "CREDIT_CARD_APPLICATION"
+        }
     }
     
     var pendingApprovalsTotal: Int {
-        pendingChores.count + pendingRequests.count
+        pendingChores.count + pendingPurchaseRequests.count
     }
     
     var recentActivity: [ActivityItem] {

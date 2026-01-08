@@ -23,6 +23,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -44,6 +47,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -69,8 +75,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 201 else {
-            let serverMsg = String(data: data, encoding: .utf8)
-            if let serverMsg { throw CreditAPIError.serverMessage(serverMsg) }
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -99,12 +106,15 @@ class CreditAPI {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        let (_, response) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CreditAPIError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
     }
@@ -122,12 +132,15 @@ class CreditAPI {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        let (_, response) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CreditAPIError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
     }
@@ -145,6 +158,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -167,6 +183,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -186,6 +205,9 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -206,35 +228,68 @@ class CreditAPI {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let (_, response) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CreditAPIError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
     }
+
+    private func parseServerMessage(from data: Data) -> String? {
+        if data.isEmpty { return nil }
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let message = json["message"] as? String, !message.isEmpty {
+                return message
+            }
+            if let error = json["error"] as? String, !error.isEmpty {
+                return error
+            }
+        }
+        if let text = String(data: data, encoding: .utf8) {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        return nil
+    }
 }
 
-enum CreditAPIError: Error {
+enum CreditAPIError: LocalizedError {
     case invalidResponse
     case httpError(Int)
     case decodingError
     case serverMessage(String)
     
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .invalidResponse:
-            return "Invalid response from server"
+            return "We couldn't reach the server. Please try again."
         case .httpError(let code):
-            return "HTTP error: \(code)"
+            switch code {
+            case 400:
+                return "Something looks off. Please try again."
+            case 401:
+                return "Please sign in again to continue."
+            case 403:
+                return "You don't have permission to do that."
+            case 404:
+                return "We couldn't find what you were looking for."
+            case 409:
+                return "That request conflicts with your account right now."
+            case 429:
+                return "Too many attempts. Please try again later."
+            default:
+                return "Something went wrong. Please try again."
+            }
         case .decodingError:
-            return "Failed to decode response"
+            return "We couldn't read the server response. Please try again."
         case .serverMessage(let msg):
             return msg
         }
     }
 }
-
-
