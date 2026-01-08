@@ -69,6 +69,8 @@ class CreditAPI {
         }
         
         guard httpResponse.statusCode == 201 else {
+            let serverMsg = String(data: data, encoding: .utf8)
+            if let serverMsg { throw CreditAPIError.serverMessage(serverMsg) }
             throw CreditAPIError.httpError(httpResponse.statusCode)
         }
         
@@ -219,6 +221,7 @@ enum CreditAPIError: Error {
     case invalidResponse
     case httpError(Int)
     case decodingError
+    case serverMessage(String)
     
     var localizedDescription: String {
         switch self {
@@ -228,6 +231,8 @@ enum CreditAPIError: Error {
             return "HTTP error: \(code)"
         case .decodingError:
             return "Failed to decode response"
+        case .serverMessage(let msg):
+            return msg
         }
     }
 }

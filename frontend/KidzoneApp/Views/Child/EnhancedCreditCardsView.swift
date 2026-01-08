@@ -431,49 +431,45 @@ struct ApplyCardView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                Text("Apply for Credit Card")
-                    .font(.title.bold())
-                
-                Text("Based on your credit score, you'll automatically be assigned the best tier you qualify for!")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding()
-                
-                Picker("Preferred Tier", selection: $selectedTier) {
-                    ForEach(CreditTier.allCases, id: \.self) { tier in
-                        Text(tier.displayName).tag(tier)
+            ScrollView {
+                VStack(spacing: 24) {
+                    Text("Apply for Credit Card")
+                        .font(.title.bold())
+                    
+                    Text("Pick a card that matches your score. We'll send it to your parent to approve.")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                    
+                    Picker("Preferred Tier", selection: $selectedTier) {
+                        ForEach(CreditTier.allCases, id: \.self) { tier in
+                            Text(tier.displayName).tag(tier)
+                        }
                     }
-                }
-                .pickerStyle(.segmented)
-                
-                // Show tier info
-                VStack(alignment: .leading, spacing: 16) {
-                    TierInfoRow(tier: .starter)
-                    TierInfoRow(tier: .builder)
-                    TierInfoRow(tier: .strong)
-                    TierInfoRow(tier: .elite)
+                    .pickerStyle(.segmented)
+                    
+                    TierDetailCard(tier: selectedTier)
+                    
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    
+                    Button(action: { Task { await applyForCard() } }) {
+                        if isApplying {
+                            ProgressView()
+                        } else {
+                            Text("Submit Application")
+                                .font(.headline)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isApplying)
                 }
                 .padding()
-                
-                if let error = errorMessage {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .padding()
-                }
-                
-                Button(action: { Task { await applyForCard() } }) {
-                    if isApplying {
-                        ProgressView()
-                    } else {
-                        Text("Submit Application")
-                            .font(.headline)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isApplying)
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -508,28 +504,70 @@ private func cleanError(_ message: String) -> String {
     return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-struct TierInfoRow: View {
+struct TierDetailCard: View {
     let tier: CreditTier
     
-    var config: TierConfig {
-        CreditTier.config(for: tier)
+    var config: TierConfig { CreditTier.config(for: tier) }
+    
+    var perks: [String] {
+        switch tier {
+        case .starter:
+            return ["Perfect for first-time credit", "Small limit keeps spending safe", "Build trust with on-time payments"]
+        case .builder:
+            return ["Higher limit for responsible kids", "Starter rewards", "Keep usage under 30% to grow"]
+        case .strong:
+            return ["Better rates and limit", "Rewards for everyday buys", "Stay green by paying monthly"]
+        case .elite:
+            return ["Top perks and rates", "Highest limit—use carefully", "Best rewards for smart spending"]
+        }
     }
     
     var body: some View {
-        HStack {
-            Image(systemName: tier.icon)
-                .foregroundStyle(tier.gradientColors[0])
-            VStack(alignment: .leading) {
-                Text(tier.displayName)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: tier.icon)
+                    .foregroundStyle(config.gradientColors.first ?? .blue)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tier.displayName)
+                        .font(.headline)
+                    Text("\(config.minScore)-\(config.maxScore) score range")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text("\(config.limit.asCurrency) limit")
                     .font(.headline)
-                Text("\(config.limit.asCurrency) limit • \(String(format: "%.1f", config.apr))% APR")
+            }
+            
+            HStack(spacing: 16) {
+                Label("\(String(format: "%.1f", config.apr))% APR", systemImage: "percent")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Label("\(String(format: "%.0f", config.rewards))% rewards", systemImage: "gift.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
-            Text("\(config.minScore)-\(config.maxScore)")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(perks, id: \.self) { perk in
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.yellow)
+                        Text(perk)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(LinearGradient(colors: config.gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing).opacity(0.25))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
 }

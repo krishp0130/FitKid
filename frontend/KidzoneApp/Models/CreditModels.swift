@@ -73,7 +73,8 @@ enum CreditTier: String, Codable, CaseIterable {
                 maxScore: 579,
                 limit: 75,   // lower limits for kids
                 apr: 19.9,
-                rewards: 0
+                rewards: 0,
+                gradientColors: [Color.purple, Color.blue]
             )
         case .builder:
             return TierConfig(
@@ -82,7 +83,8 @@ enum CreditTier: String, Codable, CaseIterable {
                 maxScore: 669,
                 limit: 150,
                 apr: 14.9,
-                rewards: 1
+                rewards: 1,
+                gradientColors: [Color.blue, Color.green]
             )
         case .strong:
             return TierConfig(
@@ -91,7 +93,8 @@ enum CreditTier: String, Codable, CaseIterable {
                 maxScore: 739,
                 limit: 300,
                 apr: 9.9,
-                rewards: 2
+                rewards: 2,
+                gradientColors: [Color.green, Color.orange]
             )
         case .elite:
             return TierConfig(
@@ -100,7 +103,8 @@ enum CreditTier: String, Codable, CaseIterable {
                 maxScore: 850,
                 limit: 600,
                 apr: 5.9,
-                rewards: 3
+                rewards: 3,
+                gradientColors: [Color.orange, Color.purple]
             )
         }
     }
@@ -113,6 +117,7 @@ struct TierConfig {
     let limit: Double
     let apr: Double
     let rewards: Double
+    let gradientColors: [Color]
 }
 
 enum CreditCardStatus: String, Codable {
