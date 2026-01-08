@@ -13,6 +13,7 @@ class AppStateViewModel: ObservableObject {
     private let choreAPI = ChoreAPI.shared
     private let moneyAPI = MoneyAPI.shared
     private let creditAPI = CreditAPI.shared
+    private let allowanceAPI = AllowanceAPI()
     private var lastChoresFetch: Date?
     private var lastWalletFetch: Date?
     private var lastCreditFetch: Date?
@@ -176,6 +177,12 @@ class AppStateViewModel: ObservableObject {
         await fetchCreditCards(accessToken: accessToken, force: true)
     }
     
+    // MARK: - Allowance
+    func createAllowance(accessToken: String, childId: String, amountCents: Int, frequency: String, customDays: Int?) async throws {
+        try await allowanceAPI.createAllowance(accessToken: accessToken, childId: childId, amountCents: amountCents, frequency: frequency, customDays: customDays)
+        // Wallet refresh is triggered via backend cache invalidation; optionally call refresh if needed
+    }
+
     func makePayment(accessToken: String, cardId: String, amount: Double) async throws {
         try await creditAPI.makePayment(accessToken: accessToken, cardId: cardId, amountDollars: amount)
         await fetchCreditCards(accessToken: accessToken, force: true)
@@ -190,4 +197,57 @@ class AppStateViewModel: ObservableObject {
 enum PaymentMethod {
     case wallet
     case credit
+}
+
+// MARK: - Allowance API (lightweight)
+private final class AllowanceAPI {
+    private let baseURLString = "http://localhost:3000/api/allowance"
+    private let session: URLSession
+    
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+    
+    func createAllowance(accessToken: String, childId: String, amountCents: Int, frequency: String, customDays: Int?) async throws {
+        guard let url = URL(string: baseURLString) else { throw AllowanceAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        
+        var body: [String: Any] = [
+            "childId": childId,
+            "amountCents": amountCents,
+            "frequency": frequency
+        ]
+        if let customDays { body["customIntervalDays"] = customDays }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw AllowanceAPIError.invalidURL }
+        
+        switch http.statusCode {
+        case 201:
+            return
+        case 401:
+            throw AllowanceAPIError.unauthorized
+        default:
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AllowanceAPIError.server(msg)
+        }
+    }
+}
+
+private enum AllowanceAPIError: LocalizedError {
+    case invalidURL
+    case unauthorized
+    case server(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Invalid allowance endpoint."
+        case .unauthorized: return "Unauthorized. Please sign in again."
+        case .server(let msg): return msg
+        }
+    }
 }

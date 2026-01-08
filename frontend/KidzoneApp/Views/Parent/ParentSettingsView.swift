@@ -11,6 +11,12 @@ struct ParentSettingsView: View {
     @State private var deviceMinimumScoreValue = 650
     @State private var dailyHourCapValue = 3
     @State private var showCopiedToast = false
+    @State private var allowanceAmount = ""
+    @State private var allowanceChildId = ""
+    @State private var allowanceFrequency: AllowanceFrequency = .weekly
+    @State private var allowanceCustomDays = "7"
+    @State private var allowanceMessage: String?
+    @State private var allowanceSubmitting = false
     
     var body: some View {
         NavigationView {
@@ -119,6 +125,44 @@ struct ParentSettingsView: View {
                         }
                         .font(AppTheme.Parent.bodyFont.weight(.semibold))
                         .foregroundStyle(AppTheme.Parent.primary)
+                    }
+
+                    Section("Allowance") {
+                        TextField("Child ID", text: $allowanceChildId)
+                            .textInputAutocapitalization(.never)
+                            .disableAutocorrection(true)
+                        TextField("Amount (e.g. 5.00)", text: $allowanceAmount)
+                            .keyboardType(.decimalPad)
+
+                        Picker("Frequency", selection: $allowanceFrequency) {
+                            ForEach(AllowanceFrequency.allCases, id: \.self) { freq in
+                                Text(freq.label).tag(freq)
+                            }
+                        }
+                        if allowanceFrequency == .custom {
+                            TextField("Custom interval (days)", text: $allowanceCustomDays)
+                                .keyboardType(.numberPad)
+                        }
+
+                        if let allowanceMessage {
+                            Text(allowanceMessage)
+                                .font(AppTheme.Parent.captionFont)
+                                .foregroundStyle(allowanceMessage.contains("Success") ? AppTheme.Parent.success : AppTheme.Parent.danger)
+                        }
+
+                        Button {
+                            Task { await submitAllowance() }
+                        } label: {
+                            if allowanceSubmitting {
+                                ProgressView()
+                            } else {
+                                Text("Add Allowance Now")
+                                    .font(.headline)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(AppTheme.Parent.primary)
+                        .disabled(allowanceSubmitting)
                     }
 
                     Section {
@@ -259,4 +303,64 @@ struct ParentSettingsView: View {
             showEditSheet = false
         }
     }
+
+    private func submitAllowance() async {
+        guard let token = authManager.session?.accessToken else {
+            allowanceMessage = "Not signed in."
+            return
+        }
+        guard !allowanceChildId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            allowanceMessage = "Child ID is required."
+            return
+        }
+        guard let amount = Double(allowanceAmount), amount > 0 else {
+            allowanceMessage = "Enter a valid amount."
+            return
+        }
+        var customDays: Int?
+        if allowanceFrequency == .custom {
+            customDays = Int(allowanceCustomDays) ?? 0
+            if let days = customDays, days <= 0 {
+                allowanceMessage = "Custom days must be > 0."
+                return
+            }
+        }
+        allowanceSubmitting = true
+        allowanceMessage = nil
+        do {
+            try await appState.createAllowance(
+                accessToken: token,
+                childId: allowanceChildId.trimmingCharacters(in: .whitespacesAndNewlines),
+                amountCents: Int((amount * 100).rounded()),
+                frequency: allowanceFrequency.rawValue,
+                customDays: customDays
+            )
+            allowanceMessage = "Success: allowance added."
+        } catch {
+            allowanceMessage = cleanError(error.localizedDescription)
+        }
+        allowanceSubmitting = false
+    }
+}
+
+enum AllowanceFrequency: String, CaseIterable {
+    case weekly = "WEEKLY"
+    case monthly = "MONTHLY"
+    case custom = "CUSTOM"
+
+    var label: String {
+        switch self {
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        case .custom: return "Custom"
+        }
+    }
+}
+
+private func cleanError(_ message: String) -> String {
+    var output = message
+    output = output.replacingOccurrences(of: "[", with: "")
+    output = output.replacingOccurrences(of: "]", with: "")
+    output = output.replacingOccurrences(of: "\"", with: "")
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }

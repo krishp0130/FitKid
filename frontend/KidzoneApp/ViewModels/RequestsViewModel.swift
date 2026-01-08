@@ -9,7 +9,7 @@ final class RequestsViewModel: ObservableObject {
 
     private let api = PurchaseRequestAPI.shared
     private var lastFetch: Date?
-    private let freshnessWindow: TimeInterval = 10 // seconds
+    private let freshnessWindow: TimeInterval = 1 // seconds for near-real-time updates
 
     func load(accessToken: String, force: Bool = false, showLoading: Bool = true) async {
         if !force, let lastFetch, Date().timeIntervalSince(lastFetch) < freshnessWindow {

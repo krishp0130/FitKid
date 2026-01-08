@@ -31,6 +31,7 @@ import {
   upgradeTierController,
   approveCardController
 } from '../credit/controllers.js'
+import { createAllowanceController } from '../allowance/controllers.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
@@ -69,6 +70,8 @@ export async function authRoutes(app: FastifyInstance) {
   // Wallet
   app.get('/api/wallet', walletBalanceController)
   app.get('/api/auth/wallet', walletBalanceController)
+  app.post('/api/allowance', createAllowanceController)
+  app.post('/api/auth/allowance', createAllowanceController)
 
   // Purchase requests (children create, parents approve/reject)
   app.get('/api/requests', listRequestsController)

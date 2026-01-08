@@ -71,7 +71,7 @@ enum CreditTier: String, Codable, CaseIterable {
                 name: "Starter Card",
                 minScore: 300,
                 maxScore: 579,
-                limit: 200,
+                limit: 75,   // lower limits for kids
                 apr: 19.9,
                 rewards: 0
             )
@@ -80,7 +80,7 @@ enum CreditTier: String, Codable, CaseIterable {
                 name: "Builder Card",
                 minScore: 580,
                 maxScore: 669,
-                limit: 500,
+                limit: 150,
                 apr: 14.9,
                 rewards: 1
             )
@@ -89,7 +89,7 @@ enum CreditTier: String, Codable, CaseIterable {
                 name: "Strong Card",
                 minScore: 670,
                 maxScore: 739,
-                limit: 1000,
+                limit: 300,
                 apr: 9.9,
                 rewards: 2
             )
@@ -98,7 +98,7 @@ enum CreditTier: String, Codable, CaseIterable {
                 name: "Elite Card",
                 minScore: 740,
                 maxScore: 850,
-                limit: 2000,
+                limit: 600,
                 apr: 5.9,
                 rewards: 3
             )

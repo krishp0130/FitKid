@@ -305,10 +305,18 @@ struct PurchaseView: View {
             )
             showSuccess = true
         } catch {
-            submitError = error.localizedDescription
+            submitError = cleanError(error.localizedDescription)
         }
         isSubmitting = false
     }
+}
+
+private func cleanError(_ message: String) -> String {
+    var output = message
+    output = output.replacingOccurrences(of: "[", with: "")
+    output = output.replacingOccurrences(of: "]", with: "")
+    output = output.replacingOccurrences(of: "\"", with: "")
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
 // MARK: - Custom Request
@@ -437,7 +445,7 @@ struct CustomRequestView: View {
             )
             showSuccess = true
         } catch {
-            submitError = error.localizedDescription
+            submitError = cleanError(error.localizedDescription)
         }
         isSubmitting = false
     }
