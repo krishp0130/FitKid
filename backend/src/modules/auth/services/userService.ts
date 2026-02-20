@@ -100,3 +100,14 @@ export async function createChildUser(authUser: SupabaseAuthUser, username: stri
 
   return insert.data as DbUser
 }
+
+export async function updateUserCreditScore(userId: string, score: number): Promise<void> {
+  const { error } = await supabaseDb
+    .from('users')
+    .update({ current_credit_score: score })
+    .eq('id', userId)
+
+  if (error) {
+    throw new Error(`Failed to update credit score: ${error.message}`)
+  }
+}

@@ -37,11 +37,46 @@ export async function createPurchaseRequest(input: CreateRequestInput): Promise<
     .select('*, requester:requester_id(username)')
     .single()
 
+  if (error && isMissingColumnError(error.message)) {
+    const fallbackPayload = {
+      family_id: payload.family_id,
+      requester_id: payload.requester_id,
+      title: payload.title,
+      description: payload.description,
+      url: payload.url,
+      image_url: payload.image_url,
+      price_cents: payload.price_cents,
+      status: payload.status
+    }
+    const retry = await supabaseDb
+      .from('purchase_requests')
+      .insert(fallbackPayload)
+      .select('*, requester:requester_id(username)')
+      .single()
+
+    if (retry.error || !retry.data) {
+      throw new Error(`Failed to create request: ${retry.error?.message ?? 'unknown error'}`)
+    }
+
+    return mapRecord(retry.data)
+  }
+
   if (error || !data) {
     throw new Error(`Failed to create request: ${error?.message ?? 'unknown error'}`)
   }
 
   return mapRecord(data)
+}
+
+function isMissingColumnError(message: string | undefined) {
+  if (!message) return false
+  const lowered = message.toLowerCase()
+  if (!lowered.includes('schema cache') && !lowered.includes('column')) return false
+  return (
+    lowered.includes('card_id') ||
+    lowered.includes('card_name') ||
+    lowered.includes('payment_method')
+  )
 }
 
 export async function fetchRequestsForUser(userId: string, role: 'PARENT' | 'CHILD', familyId?: string | null) {

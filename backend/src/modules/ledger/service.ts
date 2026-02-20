@@ -13,10 +13,10 @@ async function ensureAccount(userId: string, name: string, type: 'ASSET' | 'REVE
     .eq('user_id', userId)
     .eq('name', name)
     .eq('type', type)
-    .maybeSingle()
+    .order('created_at', { ascending: true })
 
   if (error) throw new Error(error.message)
-  if (data?.id) return data.id
+  if (data && data.length > 0 && data[0]?.id) return data[0].id
 
   const insert = await supabaseDb
     .from('ledger_accounts')

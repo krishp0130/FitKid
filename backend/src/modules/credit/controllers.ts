@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { getAuthUserFromBearer } from '../auth/services/authUser.js'
-import { fetchUserRecord } from '../auth/services/userService.js'
+import { fetchUserRecord, updateUserCreditScore } from '../auth/services/userService.js'
+import { cacheService } from '../../services/cacheService.js'
+import { createPurchaseRequest } from '../requests/services.js'
 import {
   calculateCreditScore,
   getUserCreditCards,
@@ -43,6 +45,11 @@ export async function getCreditScoreController(request: FastifyRequest, reply: F
 
   try {
     const scoreFactors = await calculateCreditScore(caller.id)
+    try {
+      await updateUserCreditScore(caller.id, scoreFactors.total_score)
+    } catch (updateErr: any) {
+      request.log.warn({ err: updateErr }, 'Failed to persist credit score')
+    }
     
     return reply.send({
       creditScore: scoreFactors.total_score,
@@ -103,6 +110,54 @@ export async function listCreditCardsController(request: FastifyRequest, reply: 
 }
 
 /**
+ * GET /api/credit/applications (Parent only)
+ * List pending credit card applications for a family
+ */
+export async function listCardApplicationsController(request: FastifyRequest, reply: FastifyReply) {
+  const authUser = await getAuthUserFromBearer(request)
+  if (!authUser) return reply.unauthorized('Missing or invalid token')
+
+  const caller = await fetchUserRecord(authUser.id)
+  if (!caller || caller.role !== 'PARENT') {
+    return reply.forbidden('Only parents can view card applications')
+  }
+
+  const cacheKey = cacheService.keys.familyCardApplications(caller.family_id)
+  const cached = await cacheService.get<any[]>(cacheKey)
+  if (cached) {
+    return reply.send({ applications: cached })
+  }
+
+  try {
+    const { data, error } = await supabaseDb
+      .from('credit_cards')
+      .select('id, user_id, card_name, tier, limit_cents, status, created_at, users!inner(username, family_id)')
+      .eq('status', 'PENDING_APPROVAL')
+      .eq('users.family_id', caller.family_id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    const applications = (data ?? []).map((row: any) => ({
+      id: row.id,
+      cardName: row.card_name,
+      tier: row.tier,
+      limit: row.limit_cents / 100,
+      requesterName: row.users?.username ?? null,
+      createdAt: row.created_at,
+      status: row.status
+    }))
+
+    await cacheService.set(cacheKey, applications, { ttl: 10 })
+
+    return reply.send({ applications })
+  } catch (err: any) {
+    request.log.error({ err }, 'Failed to fetch card applications')
+    return reply.internalServerError('Failed to fetch card applications')
+  }
+}
+
+/**
  * POST /api/credit/apply
  * Apply for a new credit card
  */
@@ -138,8 +193,10 @@ export async function applyCreditCardController(request: FastifyRequest, reply: 
       cardId: card.id,
       cardName: card.card_name
     })
-    // Invalidate family requests cache
+    // Invalidate requests cache for family and requester
     await cacheService.delete(cacheService.keys.familyRequests(caller.family_id))
+    await cacheService.delete(cacheService.keys.userRequests(caller.id))
+    await cacheService.delete(cacheService.keys.familyCardApplications(caller.family_id))
     
     return reply.code(201).send({
       card: {
@@ -379,6 +436,8 @@ export async function approveCardController(request: FastifyRequest, reply: Fast
 
     if (error) throw error
 
+    await cacheService.delete(cacheService.keys.familyCardApplications(caller.family_id))
+
     return reply.send({
       card: {
         id: data.id,
@@ -394,5 +453,3 @@ export async function approveCardController(request: FastifyRequest, reply: Fast
 
 // Import supabaseDb for approve controller
 import { supabaseDb } from '../../config/supabase.js'
-
-

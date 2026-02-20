@@ -17,5 +17,5 @@ function requireEnv(key: string): string {
 export const env: EnvConfig = {
   supabaseUrl: requireEnv('SUPABASE_URL'),
   supabaseServiceRoleKey: requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  port: Number(process.env.PORT ?? 3000)
+  port: Number(process.env.PORT ?? 3001)
 }

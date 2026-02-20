@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { googleSignInController } from './controllers/googleController.js'
 import { appleSignInController } from './controllers/appleController.js'
+import { emailSignInController, emailSignUpController } from './controllers/emailController.js'
 import { onboardParentController } from './controllers/onboardParentController.js'
 import { onboardChildController } from './controllers/onboardChildController.js'
 import { familyMembersController } from './controllers/familyController.js'
@@ -23,6 +24,7 @@ import {
 import {
   getCreditScoreController,
   listCreditCardsController,
+  listCardApplicationsController,
   applyCreditCardController,
   makePurchaseController,
   makePaymentController,
@@ -31,11 +33,13 @@ import {
   upgradeTierController,
   approveCardController
 } from '../credit/controllers.js'
-import { createAllowanceController } from '../allowance/controllers.js'
+import { createAllowanceController, listAllowancesController, deleteAllowanceController } from '../allowance/controllers.js'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/google', googleSignInController)
   app.post('/api/auth/apple', appleSignInController)
+  app.post('/api/auth/email', emailSignInController)
+  app.post('/api/auth/email/signup', emailSignUpController)
 
   // Canonical onboarding endpoints
   app.post('/api/onboard/parent', onboardParentController)
@@ -70,8 +74,12 @@ export async function authRoutes(app: FastifyInstance) {
   // Wallet
   app.get('/api/wallet', walletBalanceController)
   app.get('/api/auth/wallet', walletBalanceController)
+  app.get('/api/allowance', listAllowancesController)
   app.post('/api/allowance', createAllowanceController)
+  app.delete('/api/allowance/:id', deleteAllowanceController)
+  app.get('/api/auth/allowance', listAllowancesController)
   app.post('/api/auth/allowance', createAllowanceController)
+  app.delete('/api/auth/allowance/:id', deleteAllowanceController)
 
   // Purchase requests (children create, parents approve/reject)
   app.get('/api/requests', listRequestsController)
@@ -87,6 +95,7 @@ export async function authRoutes(app: FastifyInstance) {
   // Credit System
   app.get('/api/credit/score', getCreditScoreController)
   app.get('/api/credit/cards', listCreditCardsController)
+  app.get('/api/credit/applications', listCardApplicationsController)
   app.post('/api/credit/apply', applyCreditCardController)
   app.post('/api/credit/purchase', makePurchaseController)
   app.post('/api/credit/payment', makePaymentController)

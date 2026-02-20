@@ -9,6 +9,7 @@ import type {
   TransactionType
 } from './types.js'
 import { TIER_CONFIG } from './types.js'
+import { getWalletBalanceCents } from '../ledger/service.js'
 
 /**
  * Calculate credit score based on kid-friendly algorithm
@@ -23,14 +24,7 @@ export async function calculateCreditScore(userId: string): Promise<CreditScoreF
     .eq('status', 'ACTIVE')
 
   if (!cards || cards.length === 0) {
-    // No credit history - start at 300
-    return {
-      payment_history_score: 0,
-      utilization_score: 0,
-      credit_age_score: 0,
-      credit_mix_score: 0,
-      total_score: 300
-    }
+    return await calculateHabitScore(userId)
   }
 
   // 1. Payment History (40% weight) - Most important!
@@ -60,6 +54,43 @@ export async function calculateCreditScore(userId: string): Promise<CreditScoreF
     utilization_score: Math.round(utilizationScore),
     credit_age_score: Math.round(creditAgeScore),
     credit_mix_score: Math.round(creditMixScore),
+    total_score: Math.min(850, Math.max(300, totalScore))
+  }
+}
+
+async function calculateHabitScore(userId: string): Promise<CreditScoreFactors> {
+  const { data: chores, error } = await supabaseDb
+    .from('chores')
+    .select('status')
+    .eq('assignee_id', userId)
+
+  if (error) {
+    throw new Error(`Failed to fetch chores: ${error.message}`)
+  }
+
+  const totalChores = (chores ?? []).length
+  const completedChores = (chores ?? []).filter(chore => chore.status === 'COMPLETED').length
+  const completionRatio = totalChores > 0 ? completedChores / totalChores : 0
+
+  const paymentHistoryScore = Math.round(completionRatio * 100)
+  const walletBalanceCents = await getWalletBalanceCents(userId)
+  const utilizationScore = Math.min(100, Math.round(walletBalanceCents / 200))
+  const creditAgeScore = Math.min(100, totalChores * 5)
+  const creditMixScore = 0
+
+  const weightedScore =
+    (paymentHistoryScore * 0.40) +
+    (utilizationScore * 0.30) +
+    (creditAgeScore * 0.20) +
+    (creditMixScore * 0.10)
+
+  const totalScore = Math.round(300 + (weightedScore / 100) * 550)
+
+  return {
+    payment_history_score: paymentHistoryScore,
+    utilization_score: utilizationScore,
+    credit_age_score: creditAgeScore,
+    credit_mix_score: creditMixScore,
     total_score: Math.min(850, Math.max(300, totalScore))
   }
 }
@@ -413,5 +444,4 @@ export async function upgradeCreditCardTier(cardId: string, userId: string): Pro
   if (error) throw error
   return data as DbCreditCard
 }
-
 

@@ -107,7 +107,8 @@ class CacheService {
     familyMembers: (familyId: string) => `family:${familyId}:members`,
     choreDetail: (choreId: string) => `chore:${choreId}:detail`,
     userRequests: (userId: string) => `user:${userId}:requests`,
-    familyRequests: (familyId: string) => `family:${familyId}:requests`
+    familyRequests: (familyId: string) => `family:${familyId}:requests`,
+    familyCardApplications: (familyId: string) => `family:${familyId}:card-applications`
   }
 
   /**
@@ -126,4 +127,3 @@ class CacheService {
 }
 
 export const cacheService = new CacheService()
-

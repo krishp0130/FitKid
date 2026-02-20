@@ -5,6 +5,7 @@ import { env } from './config/env.js'
 import { authRoutes } from './modules/auth/routes.js'
 import { connectRedis, disconnectRedis } from './config/redis.js'
 import { cacheService } from './services/cacheService.js'
+import { supabaseDb } from './config/supabase.js'
 
 async function buildServer() {
   const app = Fastify({
@@ -15,6 +16,19 @@ async function buildServer() {
   await app.register(fastifySensible)
 
   app.get('/health', async () => ({ status: 'ok' }))
+
+  // Verify Supabase env without exposing secrets (for debugging auth issues)
+  app.get('/health/supabase', async (_request, reply) => {
+    try {
+      const { error } = await supabaseDb.from('users').select('id').limit(1)
+      if (error) {
+        return reply.send({ status: 'ok', supabase: 'error', message: error.message })
+      }
+      return reply.send({ status: 'ok', supabase: 'connected' })
+    } catch (err: any) {
+      return reply.send({ status: 'ok', supabase: 'error', message: err?.message ?? 'Connection failed' })
+    }
+  })
 
   await app.register(authRoutes)
 
