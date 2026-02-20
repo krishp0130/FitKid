@@ -12,12 +12,14 @@ struct ParentSettingsView: View {
     @State private var dailyHourCapValue = 3
     @State private var showCopiedToast = false
     @State private var allowanceAmount = ""
-    @State private var allowanceChildId = ""
+    @State private var selectedChildId: String = ""
     @State private var allowanceFrequency: AllowanceFrequency = .weekly
     @State private var allowanceCustomDays = "7"
     @State private var allowanceMessage: String?
     @State private var allowanceSubmitting = false
-    
+    @State private var children: [User] = []
+    @State private var allowanceDeletingId: String?
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -27,17 +29,13 @@ struct ParentSettingsView: View {
                 Form {
                     Section("Family") {
                         if let familyId = authManager.currentUser?.familyId {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Family Code")
-                                        .font(AppTheme.Parent.bodyFont)
-                                    Text(familyId)
-                                        .font(AppTheme.Parent.bodyFont.monospaced().weight(.semibold))
-                                        .foregroundStyle(AppTheme.Parent.textSecondary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
-                                Spacer()
+                            HStack(spacing: 12) {
+                                Text(familyId)
+                                    .font(.system(.subheadline, design: .monospaced).weight(.medium))
+                                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
+                                Spacer(minLength: 8)
                                 Button {
                                     UIPasteboard.general.string = familyId
                                     withAnimation { showCopiedToast = true }
@@ -45,12 +43,13 @@ struct ParentSettingsView: View {
                                         withAnimation { showCopiedToast = false }
                                     }
                                 } label: {
-                                    Label("Copy", systemImage: "doc.on.doc")
-                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(AppTheme.Parent.primary)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .tint(AppTheme.Parent.primary)
+                                .buttonStyle(.plain)
                             }
+                            .padding(.vertical, 4)
                         } else {
                             Text("Family code unavailable")
                                 .font(AppTheme.Parent.bodyFont)
@@ -128,9 +127,12 @@ struct ParentSettingsView: View {
                     }
 
                     Section("Allowance") {
-                        TextField("Child ID", text: $allowanceChildId)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
+                        Picker("Select Child", selection: $selectedChildId) {
+                            Text("Choose a child…").tag("")
+                            ForEach(children) { child in
+                                Text("\(child.username) (\(shortId(child.id)))").tag(child.id)
+                            }
+                        }
                         TextField("Amount (e.g. 5.00)", text: $allowanceAmount)
                             .keyboardType(.decimalPad)
 
@@ -165,6 +167,42 @@ struct ParentSettingsView: View {
                         .disabled(allowanceSubmitting)
                     }
 
+                    Section("Scheduled Allowances") {
+                        if appState.scheduledAllowances.isEmpty {
+                            Text("No scheduled allowances yet.")
+                                .font(AppTheme.Parent.captionFont)
+                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                        } else {
+                            ForEach(appState.scheduledAllowances) { allowance in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("\(childName(for: allowance.childId)) (\(shortId(allowance.childId)))")
+                                            .font(AppTheme.Parent.bodyFont.weight(.medium))
+                                            .foregroundStyle(AppTheme.Parent.textPrimary)
+                                        Text("\(allowance.amountFormatted) • \(allowance.frequencyLabel)")
+                                            .font(AppTheme.Parent.captionFont)
+                                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                                    }
+                                    Spacer()
+                                    Button(role: .destructive) {
+                                        Task { await deleteAllowance(allowance.id) }
+                                    } label: {
+                                        if allowanceDeletingId == allowance.id {
+                                            ProgressView()
+                                                .scaleEffect(0.8)
+                                        } else {
+                                            Image(systemName: "trash")
+                                                .font(.system(size: 16, weight: .medium))
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(allowanceDeletingId == allowance.id)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
+
                     Section {
                         Button(role: .destructive) {
                             authManager.signOut()
@@ -179,6 +217,13 @@ struct ParentSettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
+            .task {
+                await loadChildren()
+                await loadAllowances()
+            }
+            .refreshable {
+                await loadAllowances()
+            }
             .overlay(alignment: .top) {
                 if showCopiedToast {
                     Text("Family code copied")
@@ -304,13 +349,51 @@ struct ParentSettingsView: View {
         }
     }
 
+    private func shortId(_ id: String) -> String {
+        if id.count <= 8 { return id }
+        return String(id.prefix(8))
+    }
+
+    private func childName(for childId: String) -> String {
+        children.first { $0.id == childId }?.username ?? "Unknown"
+    }
+
+    private func loadChildren() async {
+        guard let token = authManager.session?.accessToken else { return }
+        do {
+            let list = try await AuthAPI.shared.fetchFamilyMembers(accessToken: token)
+            await MainActor.run { children = list }
+            if selectedChildId.isEmpty, let first = list.first {
+                await MainActor.run { selectedChildId = first.id }
+            }
+        } catch {
+            await MainActor.run { children = [] }
+        }
+    }
+
+    private func loadAllowances() async {
+        guard let token = authManager.session?.accessToken else { return }
+        await appState.fetchAllowances(accessToken: token)
+    }
+
+    private func deleteAllowance(_ allowanceId: String) async {
+        guard let token = authManager.session?.accessToken else { return }
+        allowanceDeletingId = allowanceId
+        defer { allowanceDeletingId = nil }
+        do {
+            try await appState.deleteAllowance(accessToken: token, allowanceId: allowanceId)
+        } catch {
+            allowanceMessage = cleanError(error.localizedDescription)
+        }
+    }
+
     private func submitAllowance() async {
         guard let token = authManager.session?.accessToken else {
             allowanceMessage = "Not signed in."
             return
         }
-        guard !allowanceChildId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            allowanceMessage = "Child ID is required."
+        guard !selectedChildId.isEmpty else {
+            allowanceMessage = "Please select a child."
             return
         }
         guard let amount = Double(allowanceAmount), amount > 0 else {
@@ -330,12 +413,13 @@ struct ParentSettingsView: View {
         do {
             try await appState.createAllowance(
                 accessToken: token,
-                childId: allowanceChildId.trimmingCharacters(in: .whitespacesAndNewlines),
+                childId: selectedChildId,
                 amountCents: Int((amount * 100).rounded()),
                 frequency: allowanceFrequency.rawValue,
                 customDays: customDays
             )
             allowanceMessage = "Success: allowance added."
+            allowanceAmount = ""
         } catch {
             allowanceMessage = cleanError(error.localizedDescription)
         }

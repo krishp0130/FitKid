@@ -138,6 +138,8 @@ struct CreditScoreCard: View {
                     Text("\(score.creditScore)")
                         .font(.system(size: 48, weight: .bold))
                         .foregroundStyle(score.color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     
                     Text(score.grade)
                         .font(AppTheme.Child.bodyFont.weight(.semibold))

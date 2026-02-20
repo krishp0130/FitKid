@@ -24,7 +24,7 @@ final class ChoreAPI {
     private let baseURLString: String
     private let decoder = JSONDecoder()
 
-    init(baseURLString: String = "http://localhost:3000/api/chores", session: URLSession = .shared) {
+    init(baseURLString: String = "http://localhost:3001/api/chores", session: URLSession = .shared) {
         self.baseURLString = baseURLString
         self.session = session
     }

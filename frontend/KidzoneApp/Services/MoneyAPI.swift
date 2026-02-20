@@ -24,7 +24,7 @@ final class MoneyAPI {
     private let session: URLSession
     private let decoder = JSONDecoder()
 
-    init(baseURLString: String = "http://localhost:3000/api/wallet", session: URLSession = .shared) {
+    init(baseURLString: String = "http://localhost:3001/api/wallet", session: URLSession = .shared) {
         self.baseURLString = baseURLString
         self.session = session
     }

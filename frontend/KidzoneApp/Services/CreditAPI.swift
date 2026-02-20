@@ -2,7 +2,7 @@ import Foundation
 
 class CreditAPI {
     static let shared = CreditAPI()
-    private let baseURL = "http://localhost:3000"
+    private let baseURL = "http://localhost:3001"
     private let session = URLSession.shared
     private let decoder = JSONDecoder()
     
@@ -55,6 +55,32 @@ class CreditAPI {
         
         let result = try decoder.decode(CreditCardsResponse.self, from: data)
         return result.cards
+    }
+
+    func getCardApplications(accessToken: String) async throws -> [CardApplication] {
+        let url = URL(string: "\(baseURL)/api/credit/applications")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw CreditAPIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let message = parseServerMessage(from: data) {
+                throw CreditAPIError.serverMessage(message)
+            }
+            throw CreditAPIError.httpError(httpResponse.statusCode)
+        }
+
+        struct ApplicationsResponse: Codable {
+            let applications: [CardApplication]
+        }
+        let result = try decoder.decode(ApplicationsResponse.self, from: data)
+        return result.applications
     }
     
     func applyForCreditCard(accessToken: String, requestedTier: CreditTier? = nil) async throws -> CreditCard {

@@ -5,15 +5,19 @@ struct RootView: View {
     
     var body: some View {
         Group {
-            if authManager.isAuthenticated {
+            if authManager.onboardingRequired {
+                // Show onboarding first if required
+                OnboardingView()
+            } else if authManager.isAuthenticated {
+                // User is authenticated
                 if let user = authManager.currentUser {
                     MainTabView(user: user)
                 } else {
-                    RoleSelectionView()
+                    // Authenticated but no user - shouldn't happen, but show welcome
+                    WelcomeView()
                 }
-            } else if authManager.onboardingRequired {
-                OnboardingView()
             } else {
+                // Not authenticated - show welcome/login
                 WelcomeView()
             }
         }

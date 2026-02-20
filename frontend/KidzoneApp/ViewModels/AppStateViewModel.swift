@@ -9,6 +9,7 @@ class AppStateViewModel: ObservableObject {
     @Published var creditCards: [CreditCard] = []
     @Published var creditScore: CreditScore?
     @Published var creditError: String?
+    @Published var scheduledAllowances: [ScheduledAllowance] = []
 
     private let choreAPI = ChoreAPI.shared
     private let moneyAPI = MoneyAPI.shared
@@ -158,6 +159,7 @@ class AppStateViewModel: ObservableObject {
             let score = try await creditAPI.getCreditScore(accessToken: accessToken)
             await MainActor.run {
                 self.creditScore = score
+                self.state.creditScore = score.creditScore
                 self.creditError = nil
             }
         } catch {
@@ -180,7 +182,21 @@ class AppStateViewModel: ObservableObject {
     // MARK: - Allowance
     func createAllowance(accessToken: String, childId: String, amountCents: Int, frequency: String, customDays: Int?) async throws {
         try await allowanceAPI.createAllowance(accessToken: accessToken, childId: childId, amountCents: amountCents, frequency: frequency, customDays: customDays)
-        // Wallet refresh is triggered via backend cache invalidation; optionally call refresh if needed
+        await fetchAllowances(accessToken: accessToken)
+    }
+
+    func fetchAllowances(accessToken: String) async {
+        do {
+            let list = try await allowanceAPI.listAllowances(accessToken: accessToken)
+            await MainActor.run { scheduledAllowances = list }
+        } catch {
+            await MainActor.run { scheduledAllowances = [] }
+        }
+    }
+
+    func deleteAllowance(accessToken: String, allowanceId: String) async throws {
+        try await allowanceAPI.deleteAllowance(accessToken: accessToken, allowanceId: allowanceId)
+        await MainActor.run { scheduledAllowances.removeAll { $0.id == allowanceId } }
     }
 
     func makePayment(accessToken: String, cardId: String, amount: Double) async throws {
@@ -199,15 +215,71 @@ enum PaymentMethod {
     case credit
 }
 
+// MARK: - Scheduled Allowance (for list display)
+struct ScheduledAllowance: Identifiable, Codable {
+    let id: String
+    let childId: String
+    let amountCents: Int
+    let frequency: String
+    let customIntervalDays: Int?
+    let createdAt: String?
+
+    var amountFormatted: String {
+        let d = Double(amountCents) / 100.0
+        return String(format: "$%.2f", d)
+    }
+
+    var frequencyLabel: String {
+        switch frequency.uppercased() {
+        case "WEEKLY": return "Weekly"
+        case "MONTHLY": return "Monthly"
+        case "CUSTOM":
+            if let days = customIntervalDays { return "Every \(days) days" }
+            return "Custom"
+        default: return frequency
+        }
+    }
+}
+
 // MARK: - Allowance API (lightweight)
 private final class AllowanceAPI {
-    private let baseURLString = "http://localhost:3000/api/allowance"
+    private let baseURLString = "http://localhost:3001/api/allowance"
     private let session: URLSession
-    
+    private let decoder = JSONDecoder()
+
     init(session: URLSession = .shared) {
         self.session = session
     }
-    
+
+    func listAllowances(accessToken: String) async throws -> [ScheduledAllowance] {
+        guard let url = URL(string: baseURLString) else { throw AllowanceAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw AllowanceAPIError.invalidURL }
+        guard http.statusCode == 200 else {
+            if http.statusCode == 401 { throw AllowanceAPIError.unauthorized }
+            throw AllowanceAPIError.server(String(data: data, encoding: .utf8) ?? "Unknown error")
+        }
+        struct ListResponse: Codable { let allowances: [ScheduledAllowance] }
+        let decoded = try decoder.decode(ListResponse.self, from: data)
+        return decoded.allowances
+    }
+
+    func deleteAllowance(accessToken: String, allowanceId: String) async throws {
+        guard let url = URL(string: "\(baseURLString)/\(allowanceId)") else { throw AllowanceAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw AllowanceAPIError.invalidURL }
+        guard http.statusCode == 204 || http.statusCode == 200 else {
+            if http.statusCode == 401 { throw AllowanceAPIError.unauthorized }
+            throw AllowanceAPIError.server("Delete failed")
+        }
+    }
+
     func createAllowance(accessToken: String, childId: String, amountCents: Int, frequency: String, customDays: Int?) async throws {
         guard let url = URL(string: baseURLString) else { throw AllowanceAPIError.invalidURL }
         var request = URLRequest(url: url)

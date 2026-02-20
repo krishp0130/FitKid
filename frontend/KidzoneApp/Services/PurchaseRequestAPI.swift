@@ -24,7 +24,7 @@ final class PurchaseRequestAPI {
     private let baseURLString: String
     private let decoder = JSONDecoder()
 
-    init(baseURLString: String = "http://localhost:3000/api/requests", session: URLSession = .shared) {
+    init(baseURLString: String = "http://localhost:3001/api/requests", session: URLSession = .shared) {
         self.baseURLString = baseURLString
         self.session = session
     }

@@ -24,7 +24,7 @@ struct ChildMainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ChildDashboardView()
+            ChildDashboardView(onSelectTab: { selectedTab = $0 })
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }

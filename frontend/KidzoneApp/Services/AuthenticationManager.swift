@@ -61,11 +61,26 @@ class AuthenticationManager: ObservableObject {
         print("✅ Got Google ID token, exchanging with backend...")
         
         let response = try await authAPI.exchangeGoogleToken(idToken: googleResult.idToken)
-        print("✅ Backend response received: status=\(response.status), user=\(response.user?.id ?? "nil")")
+        print("✅ Backend response received: status=\(response.effectiveStatus), user=\(response.user?.id ?? "nil")")
         
         handleAuthResponse(response)
+        
+        // If user needs onboarding, return a placeholder user - onboarding will complete it
+        if response.effectiveStatus == .needsOnboarding {
+            // Return a temporary user for onboarding flow
+            return User(
+                id: response.user?.id ?? UUID().uuidString,
+                username: response.user?.username ?? "",
+                email: response.user?.email,
+                role: .parent, // Will be set during onboarding
+                familyId: response.user?.familyId ?? "",
+                currentCreditScore: response.user?.currentCreditScore ?? 300
+            )
+        }
+        
+        // For existing users, user should be present
         guard let user = response.user else {
-            print("❌ No user in response")
+            print("❌ No user in response for existing user")
             throw AuthError.invalidCredentials
         }
         return user
@@ -80,6 +95,21 @@ class AuthenticationManager: ObservableObject {
         let appleResult = try await appleSignInService.signIn()
         let response = try await authAPI.exchangeAppleToken(idToken: appleResult.identityToken, nonce: appleResult.nonce)
         handleAuthResponse(response)
+        
+        // If user needs onboarding, return a placeholder user - onboarding will complete it
+        if response.effectiveStatus == .needsOnboarding {
+            // Return a temporary user for onboarding flow
+            return User(
+                id: response.user?.id ?? UUID().uuidString,
+                username: response.user?.username ?? "",
+                email: response.user?.email,
+                role: .parent, // Will be set during onboarding
+                familyId: response.user?.familyId ?? "",
+                currentCreditScore: response.user?.currentCreditScore ?? 300
+            )
+        }
+        
+        // For existing users, user should be present
         guard let user = response.user else { throw AuthError.invalidCredentials }
         return user
     }
@@ -92,6 +122,21 @@ class AuthenticationManager: ObservableObject {
         
         let response = try await authAPI.signInWithEmail(email: email, password: password)
         handleAuthResponse(response)
+        
+        // If user needs onboarding, return a placeholder user - onboarding will complete it
+        if response.effectiveStatus == .needsOnboarding {
+            // Return a temporary user for onboarding flow
+            return User(
+                id: response.user?.id ?? UUID().uuidString,
+                username: response.user?.username ?? "",
+                email: response.user?.email,
+                role: .parent, // Will be set during onboarding
+                familyId: response.user?.familyId ?? "",
+                currentCreditScore: response.user?.currentCreditScore ?? 300
+            )
+        }
+        
+        // For existing users, user should be present
         guard let user = response.user else {
             throw AuthError.invalidCredentials
         }
@@ -105,6 +150,21 @@ class AuthenticationManager: ObservableObject {
         
         let response = try await authAPI.signUpWithEmail(email: email, password: password)
         handleAuthResponse(response)
+        
+        // New sign-ups always need onboarding
+        if response.effectiveStatus == .needsOnboarding {
+            // Return a temporary user for onboarding flow
+            return User(
+                id: response.user?.id ?? UUID().uuidString,
+                username: response.user?.username ?? "",
+                email: response.user?.email,
+                role: .parent, // Will be set during onboarding
+                familyId: response.user?.familyId ?? "",
+                currentCreditScore: response.user?.currentCreditScore ?? 300
+            )
+        }
+        
+        // Shouldn't happen for new sign-ups, but handle it
         guard let user = response.user else {
             throw AuthError.invalidCredentials
         }

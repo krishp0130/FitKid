@@ -4,7 +4,7 @@ import Foundation
 class APIService {
     static let shared = APIService()
     
-    private let baseURL = "http://localhost:3000/api" // Will be configurable
+    private let baseURL = "http://localhost:3001/api" // Will be configurable
     
     private init() {}
     

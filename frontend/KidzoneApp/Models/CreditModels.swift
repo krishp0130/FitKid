@@ -31,6 +31,18 @@ struct CreditCard: Identifiable, Codable {
     var isPending: Bool { status == .pendingApproval }
 }
 
+struct CardApplication: Identifiable, Codable {
+    let id: String
+    let cardName: String
+    let tier: CreditTier
+    let limit: Double
+    let requesterName: String?
+    let createdAt: String
+    let status: CreditCardStatus
+
+    var limitFormatted: String { limit.asCurrency }
+}
+
 enum CreditTier: String, Codable, CaseIterable {
     case starter = "STARTER"
     case builder = "BUILDER"
@@ -242,4 +254,3 @@ struct UpgradeEligibilityResponse: Codable {
     let newTier: CreditTier?
     let creditScore: Int
 }
-

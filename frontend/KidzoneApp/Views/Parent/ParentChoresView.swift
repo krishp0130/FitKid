@@ -32,8 +32,20 @@ struct ParentChoresView: View {
                             ProgressView()
                                 .tint(AppTheme.Parent.primary)
                         } else if let errorMessage {
-                            Text(errorMessage)
-                                .foregroundStyle(AppTheme.Parent.danger)
+                            HStack(spacing: 8) {
+                                Image(systemName: "wifi.exclamationmark")
+                                    .font(.system(size: 14))
+                                Text(errorMessage)
+                                    .font(AppTheme.Parent.captionFont)
+                            }
+                            .foregroundStyle(AppTheme.Parent.textSecondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(AppTheme.Parent.textSecondary.opacity(0.12))
+                            )
                         }
 
                         ForEach(filteredChores) { chore in
@@ -161,12 +173,13 @@ struct ParentChoreCard: View {
     var onEdit: (() -> Void)?
 
     var body: some View {
-        HStack {
+        HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(alignment: .top) {
                     Text(chore.title)
                         .font(AppTheme.Parent.headlineFont)
                         .foregroundStyle(AppTheme.Parent.textPrimary)
+                        .lineLimit(1)
                     
                     if chore.isRecurring {
                         Text(chore.recurrenceLabel)
@@ -181,27 +194,30 @@ struct ParentChoreCard: View {
                     }
                 }
 
-                Text(chore.detail)
-                    .font(AppTheme.Parent.bodyFont)
-                    .foregroundStyle(AppTheme.Parent.textSecondary)
-                    .lineLimit(2)
+                if !chore.detail.isEmpty {
+                    Text(chore.detail)
+                        .font(AppTheme.Parent.bodyFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                        .lineLimit(2)
+                }
 
-                HStack {
+                HStack(spacing: 6) {
                     Text("Reward: \(chore.rewardFormatted)")
                         .font(AppTheme.Parent.captionFont)
                         .foregroundStyle(AppTheme.Parent.success)
-                    
                     if let assigneeName = chore.assigneeName {
-                        Text("• \(assigneeName)")
+                        Text("·")
+                            .font(AppTheme.Parent.captionFont)
+                            .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.8))
+                        Text(assigneeName)
                             .font(AppTheme.Parent.captionFont)
                             .foregroundStyle(AppTheme.Parent.textSecondary)
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
-
-            VStack(spacing: 8) {
+            VStack(alignment: .trailing, spacing: 8) {
                 Text(chore.status.label)
                     .font(AppTheme.Parent.captionFont.weight(.semibold))
                     .foregroundStyle(AppTheme.Parent.textPrimary)
@@ -226,35 +242,45 @@ struct ParentChoreCard: View {
                             Button {
                                 onDecision?(.approve)
                             } label: {
-                                HStack(spacing: 4) {
+                                HStack(spacing: 6) {
                                     Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 16))
                                     Text("Approve")
                                         .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
                                 }
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
                                 .background(
                                     Capsule()
                                         .fill(AppTheme.Parent.success)
                                 )
+                                .fixedSize(horizontal: true, vertical: false)
                             }
+                            .buttonStyle(.plain)
                             Button {
                                 onDecision?(.reject)
                             } label: {
-                                HStack(spacing: 4) {
+                                HStack(spacing: 6) {
                                     Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 16))
                                     Text("Reject")
                                         .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
                                 }
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
                                 .background(
                                     Capsule()
                                         .fill(AppTheme.Parent.danger)
                                 )
+                                .fixedSize(horizontal: true, vertical: false)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 } else if chore.status == .assigned {
@@ -266,6 +292,7 @@ struct ParentChoreCard: View {
                     }
                 }
             }
+            .layoutPriority(1)
         }
         .padding(AppTheme.Parent.cardPadding)
         .background(

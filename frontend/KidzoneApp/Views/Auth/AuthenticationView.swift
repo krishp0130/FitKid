@@ -56,39 +56,84 @@ struct AuthenticationView: View {
                 } else {
                     // OAuth Buttons
                     oAuthButtons
+                    
+                    // Email button as a clean option
+                    Button(action: {
+                        withAnimation {
+                            showEmailForm = true
+                        }
+                    }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(.white)
+                            
+                            Text("Continue with Email")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 14)
+                        .padding(.horizontal, 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white.opacity(0.2))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(.white.opacity(0.3), lineWidth: 1.5)
+                                )
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .padding(.horizontal, 40)
+                    .padding(.top, 8)
                 }
                 
                 Spacer()
                 
-                // Toggle between email form and OAuth, and between sign-in/sign-up
-                HStack(spacing: 8) {
-                    Button(action: {
-                        withAnimation {
-                            showEmailForm.toggle()
-                        }
-                    }) {
-                        Text(showEmailForm ? "Use Google/Apple instead" : "Use email instead")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    
-                    Text("•")
-                        .foregroundStyle(.white.opacity(0.5))
-                    
+                // Toggle between sign-in/sign-up
+                if !showEmailForm {
                     Button(action: {
                         withAnimation {
                             isSignUp.toggle()
-                            email = ""
-                            password = ""
-                            confirmPassword = ""
                         }
                     }) {
                         Text(isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up")
                             .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.white.opacity(0.9))
                     }
+                    .padding(.bottom, 30)
+                } else {
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            withAnimation {
+                                showEmailForm = false
+                            }
+                        }) {
+                            Text("Back")
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        
+                        Text("•")
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        Button(action: {
+                            withAnimation {
+                                isSignUp.toggle()
+                                email = ""
+                                password = ""
+                                confirmPassword = ""
+                            }
+                        }) {
+                            Text(isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up")
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                    }
+                    .padding(.bottom, 30)
                 }
-                .padding(.bottom, 30)
             }
         }
         .alert("Authentication Error", isPresented: $showError) {
@@ -264,113 +309,39 @@ struct GoogleAuthButton: View {
             HStack(spacing: 12) {
                 if isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
-                    // Standard Google Logo - matches official Google sign-in button
-                    GoogleLogoView()
-                        .frame(width: 18, height: 18)
+                    // Simple, clean Google "G" icon
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 20, height: 20)
+                        
+                        Text("G")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
+                    }
                 }
                 
                 Text(isSignUp ? "Sign up with Google" : "Continue with Google")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color(red: 0.26, green: 0.26, blue: 0.26))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
                 
                 Spacer()
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 20)
             .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.white.opacity(0.25))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.white.opacity(0.4), lineWidth: 1.5)
                     )
-                    .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
             )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(ScaleButtonStyle())
         .disabled(isLoading)
-    }
-}
-
-// Standard Google Logo View - matches the official Google sign-in button design
-struct GoogleLogoView: View {
-    var body: some View {
-        ZStack {
-            // White background circle
-            Circle()
-                .fill(Color.white)
-                .frame(width: 18, height: 18)
-            
-            // Google "G" logo - official colors and proportions
-            GeometryReader { geometry in
-                let size = min(geometry.size.width, geometry.size.height)
-                
-                ZStack {
-                    // Blue arc (top-right quadrant)
-                    Path { path in
-                        path.addArc(
-                            center: CGPoint(x: size/2, y: size/2),
-                            radius: size/2 - 1,
-                            startAngle: .degrees(-45),
-                            endAngle: .degrees(45),
-                            clockwise: false
-                        )
-                    }
-                    .stroke(Color(red: 0.26, green: 0.52, blue: 0.96), lineWidth: 2.2)
-                    
-                    // Red arc (right side)
-                    Path { path in
-                        path.addArc(
-                            center: CGPoint(x: size/2, y: size/2),
-                            radius: size/2 - 1,
-                            startAngle: .degrees(45),
-                            endAngle: .degrees(90),
-                            clockwise: false
-                        )
-                    }
-                    .stroke(Color(red: 0.91, green: 0.26, blue: 0.21), lineWidth: 2.2)
-                    
-                    // Yellow arc (left side)
-                    Path { path in
-                        path.addArc(
-                            center: CGPoint(x: size/2, y: size/2),
-                            radius: size/2 - 1,
-                            startAngle: .degrees(135),
-                            endAngle: .degrees(225),
-                            clockwise: false
-                        )
-                    }
-                    .stroke(Color(red: 0.99, green: 0.75, blue: 0.18), lineWidth: 2.2)
-                    
-                    // Green arc (bottom-right)
-                    Path { path in
-                        path.addArc(
-                            center: CGPoint(x: size/2, y: size/2),
-                            radius: size/2 - 1,
-                            startAngle: .degrees(270),
-                            endAngle: .degrees(315),
-                            clockwise: false
-                        )
-                    }
-                    .stroke(Color(red: 0.14, green: 0.65, blue: 0.38), lineWidth: 2.2)
-                    
-                    // Horizontal line to complete the "G" (extends from center-right)
-                    Path { path in
-                        let centerX = size/2
-                        let centerY = size/2
-                        let radius = size/2 - 1
-                        let startX = centerX + radius * cos(45 * .pi / 180)
-                        let startY = centerY + radius * sin(45 * .pi / 180)
-                        path.move(to: CGPoint(x: startX, y: startY))
-                        path.addLine(to: CGPoint(x: size - 1, y: startY))
-                    }
-                    .stroke(Color(red: 0.26, green: 0.52, blue: 0.96), lineWidth: 2.2)
-                }
-            }
-        }
-        .frame(width: 18, height: 18)
     }
 }
 

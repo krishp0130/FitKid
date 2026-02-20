@@ -30,12 +30,10 @@ struct ParentDashboardView: View {
                             familyCodeCard
                         }
 
-                        if !pendingCardApplications.isEmpty {
-                            cardApplicationsCard
-                        }
-
                         // Family Overview
                         familyOverviewCard
+
+                        cardApplicationsCard
 
                         // Pending Approvals
                         pendingApprovalsCard
@@ -64,10 +62,10 @@ struct ParentDashboardView: View {
                 Task {
                     await refreshDashboard(force: false, showLoading: false)
                 }
-                // Auto-refresh every 1 second
-                refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                // Auto-refresh every 5 seconds (use cached responses between refreshes)
+                refreshTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
                     Task {
-                        await refreshDashboard(force: true, showLoading: false)
+                        await refreshDashboard(force: false, showLoading: false)
                     }
                 }
             }
@@ -112,30 +110,46 @@ struct ParentDashboardView: View {
     }
     
     private var familyCodeCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Family Code")
-                .font(AppTheme.Parent.headlineFont)
-                .foregroundStyle(AppTheme.Parent.textPrimary)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Family Code")
+                    .font(AppTheme.Parent.headlineFont)
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                Spacer()
+            }
             if let familyId = authManager.currentUser?.familyId {
-                HStack {
-                    Text(familyId)
-                        .font(AppTheme.Parent.bodyFont.monospaced().weight(.semibold))
-                        .foregroundStyle(AppTheme.Parent.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Spacer()
-                    Button(action: {
-                        UIPasteboard.general.string = familyId
-                    }) {
-                        Label("Copy", systemImage: "doc.on.doc")
-                            .font(AppTheme.Parent.captionFont.weight(.semibold))
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        Text(familyId)
+                            .font(.system(.subheadline, design: .monospaced).weight(.medium))
+                            .foregroundStyle(AppTheme.Parent.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(AppTheme.Parent.textSecondary.opacity(0.08))
+                            )
+                        Button(action: {
+                            UIPasteboard.general.string = familyId
+                        }) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(AppTheme.Parent.primary)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(AppTheme.Parent.primary.opacity(0.15))
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppTheme.Parent.primary)
+                    Text("Share this code with your kids so they can join.")
+                        .font(AppTheme.Parent.captionFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
                 }
-                Text("Share this code with your kids so they can join your family.")
-                    .font(AppTheme.Parent.captionFont)
-                    .foregroundStyle(AppTheme.Parent.textSecondary)
             } else {
                 Text("Family code unavailable")
                     .font(AppTheme.Parent.bodyFont)
@@ -177,7 +191,7 @@ struct ParentDashboardView: View {
                             .font(AppTheme.Parent.headlineFont)
                             .foregroundStyle(AppTheme.Parent.textPrimary)
                         Text("Share the family code so your kids can join.")
-                            .font(AppTheme.Parent.captionFont)
+                            .font(AppTheme.Parent.captionFont)  
                             .foregroundStyle(AppTheme.Parent.textSecondary)
                     }
                 }
@@ -322,38 +336,46 @@ struct ParentDashboardView: View {
                     .foregroundStyle(AppTheme.Parent.warning)
             }
 
-            ForEach(pendingCardApplications.prefix(3)) { request in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Label(request.cardName ?? "Credit Card", systemImage: "creditcard.fill")
-                            .labelStyle(.titleAndIcon)
-                            .font(AppTheme.Parent.bodyFont.weight(.semibold))
-                            .foregroundStyle(AppTheme.Parent.textPrimary)
-                        Spacer()
-                        Text("Pending")
-                            .font(AppTheme.Parent.captionFont.weight(.semibold))
-                            .foregroundStyle(AppTheme.Parent.warning)
+            if pendingCardApplications.isEmpty {
+                Text("No card applications yet.")
+                    .font(AppTheme.Parent.bodyFont)
+                    .foregroundStyle(AppTheme.Parent.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            } else {
+                ForEach(pendingCardApplications.prefix(3)) { request in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Label(request.cardName ?? "Credit Card", systemImage: "creditcard.fill")
+                                .labelStyle(.titleAndIcon)
+                                .font(AppTheme.Parent.bodyFont.weight(.semibold))
+                                .foregroundStyle(AppTheme.Parent.textPrimary)
+                            Spacer()
+                            Text("Pending")
+                                .font(AppTheme.Parent.captionFont.weight(.semibold))
+                                .foregroundStyle(AppTheme.Parent.warning)
+                        }
+                        if let description = request.description, !description.isEmpty {
+                            Text(description)
+                                .font(AppTheme.Parent.captionFont)
+                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                        }
+                        if let requester = request.requesterName {
+                            Text("From: \(requester)")
+                                .font(AppTheme.Parent.captionFont)
+                                .foregroundStyle(AppTheme.Parent.textSecondary)
+                        }
                     }
-                    if let description = request.description, !description.isEmpty {
-                        Text(description)
-                            .font(AppTheme.Parent.captionFont)
-                            .foregroundStyle(AppTheme.Parent.textSecondary)
-                    }
-                    if let requester = request.requesterName {
-                        Text("From: \(requester)")
-                            .font(AppTheme.Parent.captionFont)
-                            .foregroundStyle(AppTheme.Parent.textSecondary)
-                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                            .fill(AppTheme.Parent.cardBackground.opacity(0.6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
+                                    .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
+                            )
+                    )
                 }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
-                        .fill(AppTheme.Parent.cardBackground.opacity(0.6))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
-                                .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
-                        )
-                )
             }
         }
         .padding(AppTheme.Parent.cardPadding)
@@ -526,14 +548,14 @@ private extension ParentDashboardView {
     }
     
     var pendingCardApplications: [PurchaseRequest] {
-        requestsVM.requests.filter {
-            $0.status == .pending && $0.paymentMethod == "CREDIT_CARD_APPLICATION"
+        requestsVM.requests.filter { request in
+            request.status == .pending && isCardApplication(request)
         }
     }
 
     var pendingPurchaseRequests: [PurchaseRequest] {
-        requestsVM.requests.filter {
-            $0.status == .pending && $0.paymentMethod != "CREDIT_CARD_APPLICATION"
+        requestsVM.requests.filter { request in
+            request.status == .pending && !isCardApplication(request)
         }
     }
     
@@ -548,7 +570,7 @@ private extension ParentDashboardView {
             let statusText = req.status.label
             let icon: String
             let color: Color
-            let isCardApp = req.paymentMethod == "CREDIT_CARD_APPLICATION"
+            let isCardApp = isCardApplication(req)
             switch req.status {
             case .pending:
                 icon = isCardApp ? "creditcard.fill" : "hourglass"
@@ -568,11 +590,17 @@ private extension ParentDashboardView {
                 timeAgo: timeAgo(from: date),
                 icon: icon,
                 color: color,
-                trailing: req.paymentMethod == "CREDIT_CARD_APPLICATION" ? nil : req.priceFormatted
+                trailing: isCardApp ? nil : req.priceFormatted
             )
             return (date, item)
         }
         return items.sorted { $0.0 > $1.0 }.prefix(5).map { $0.1 }
+    }
+
+    func isCardApplication(_ request: PurchaseRequest) -> Bool {
+        if request.paymentMethod == "CREDIT_CARD_APPLICATION" { return true }
+        if request.title == "Credit Card Application" && request.priceCents == 0 { return true }
+        return false
     }
 
     private func methodLabel(_ raw: String) -> String {

@@ -3,7 +3,9 @@ import SwiftUI
 struct ChildDashboardView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @EnvironmentObject var authManager: AuthenticationManager
-    
+    /// When set, quick action buttons switch to this tab index (e.g. from MainTabView). Chores=1, Cards=2, Shop=3.
+    var onSelectTab: ((Int) -> Void)? = nil
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -38,6 +40,10 @@ struct ChildDashboardView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .task {
+                guard let token = authManager.session?.accessToken else { return }
+                await appState.fetchCreditScore(accessToken: token)
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Kidzone")
@@ -74,10 +80,12 @@ struct ChildDashboardView: View {
                         .font(AppTheme.Child.headlineFont)
                         .foregroundStyle(AppTheme.Child.textSecondary)
 
-                    HStack(spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text("\(appState.state.creditScore)")
                             .font(.system(size: 56, design: .rounded).weight(.heavy))
                             .foregroundStyle(AppTheme.Child.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
 
                         ScoreBadge(score: appState.state.creditScore)
                     }
@@ -143,15 +151,15 @@ struct ChildDashboardView: View {
 
             HStack(spacing: 12) {
                 QuickActionButton(icon: "checkmark.circle.fill", label: "Do Chores", color: AppTheme.Child.success) {
-                    // Navigate to chores
+                    onSelectTab?(1) // Chores tab
                 }
 
                 QuickActionButton(icon: "cart.fill", label: "Shop", color: AppTheme.Child.secondary) {
-                    // Navigate to marketplace
+                    onSelectTab?(3) // Shop tab
                 }
 
                 QuickActionButton(icon: "creditcard.fill", label: "My Cards", color: AppTheme.Child.primary) {
-                    // Navigate to cards
+                    onSelectTab?(2) // Cards tab
                 }
             }
         }
@@ -330,4 +338,3 @@ struct MarketplacePreviewCard: View {
         )
     }
 }
-

@@ -8,14 +8,31 @@ enum AuthAPIError: LocalizedError {
     case decoding(Error)
     case network(Error)
 
+    /// User-friendly message for connection/backend issues
+    private static let backendUnavailableMessage = "Can't reach the server. Start the backend in Terminal:\n\ncd FitKid/backend\nnpm run dev\n\n(Server runs on port 3001.)"
+
     var errorDescription: String? {
         switch self {
         case .invalidURL: return "Auth endpoint is misconfigured."
         case .invalidResponse: return "Received an unexpected response from the server."
         case .unauthorized: return "Your session is not authorized."
-        case .server(let message): return message
+        case .server(let message):
+            if message.contains("Cannot POST") || message.contains("<!DOCTYPE") || message.contains("404") {
+                return Self.backendUnavailableMessage
+            }
+            return message
         case .decoding: return "Unable to read the server response."
-        case .network(let error): return error.localizedDescription
+        case .network(let error):
+            let ns = error as NSError
+            // Connection refused (POSIX 61) or URLSession "cannot connect to host"
+            if ns.domain == NSPOSIXErrorDomain && ns.code == 61 { return Self.backendUnavailableMessage }
+            if ns.domain == NSURLErrorDomain && (ns.code == NSURLErrorCannotConnectToHost || ns.code == -1022) { // -1022 = connection refused
+                return Self.backendUnavailableMessage
+            }
+            if error.localizedDescription.lowercased().contains("refused") {
+                return Self.backendUnavailableMessage
+            }
+            return error.localizedDescription
         }
     }
 }
@@ -30,8 +47,8 @@ final class AuthAPI {
     private let onboardBaseURLString: String
 
     init(
-        authBaseURLString: String = "http://localhost:3000/api/auth", // change here if hitting a device: e.g., http://YOUR-MAC-IP:3000/api/auth
-        onboardBaseURLString: String = "http://localhost:3000/api/onboard",
+        authBaseURLString: String = "http://localhost:3001/api/auth", // change here if hitting a device: e.g., http://YOUR-MAC-IP:3001/api/auth
+        onboardBaseURLString: String = "http://localhost:3001/api/onboard",
         session: URLSession = .shared
     ) {
         self.authBaseURLString = authBaseURLString
