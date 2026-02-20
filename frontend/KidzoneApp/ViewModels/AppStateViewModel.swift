@@ -83,6 +83,7 @@ class AppStateViewModel: ObservableObject {
             if let idx = self.state.chores.firstIndex(where: { $0.id == choreId }) {
                 self.state.chores[idx] = updated
                 self.lastChoresFetch = Date()
+                self.objectWillChange.send()
             }
         }
         await refreshWallet(accessToken: accessToken, force: true)
@@ -94,6 +95,7 @@ class AppStateViewModel: ObservableObject {
             if let idx = self.state.chores.firstIndex(where: { $0.id == choreId }) {
                 self.state.chores[idx] = updated
                 self.lastChoresFetch = Date()
+                self.objectWillChange.send()
             }
         }
         await refreshWallet(accessToken: accessToken, force: true)

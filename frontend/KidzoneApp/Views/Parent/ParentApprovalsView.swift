@@ -141,88 +141,70 @@ struct RequestRow: View {
     var onDecision: ((ApprovalAction) -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(request.title)
-                        .font(AppTheme.Parent.headlineFont)
-                        .foregroundStyle(AppTheme.Parent.textPrimary)
-                    if let method = request.paymentMethod {
-                        HStack(spacing: 6) {
-                            Label(methodLabel(method), systemImage: methodIcon(method))
-                                .labelStyle(.titleAndIcon)
-                                .font(AppTheme.Parent.captionFont.weight(.semibold))
-                                .foregroundStyle(AppTheme.Parent.textSecondary)
-                            if let card = request.cardName {
-                                Text("• \(card)")
-                                    .font(AppTheme.Parent.captionFont)
-                                    .foregroundStyle(AppTheme.Parent.textSecondary)
-                            }
-                        }
-                    }
-                    if let requester = request.requesterName {
-                        Text("From: \(requester)")
-                            .font(AppTheme.Parent.captionFont)
-                            .foregroundStyle(AppTheme.Parent.textSecondary)
-                    }
-                    if let desc = request.description, !desc.isEmpty {
-                        Text(desc)
-                            .font(AppTheme.Parent.captionFont)
-                            .foregroundStyle(AppTheme.Parent.textSecondary.opacity(0.8))
-                            .lineLimit(2)
-                    }
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(request.title)
+                    .font(AppTheme.Parent.headlineFont)
+                    .foregroundStyle(AppTheme.Parent.textPrimary)
+                    .lineLimit(1)
+
+                if let requester = request.requesterName {
+                    Text("From: \(requester)")
+                        .font(AppTheme.Parent.captionFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
                 }
-                Spacer()
+
+                if let desc = request.description, !desc.isEmpty {
+                    Text(desc)
+                        .font(AppTheme.Parent.bodyFont)
+                        .foregroundStyle(AppTheme.Parent.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 8) {
                 Text(request.priceFormatted)
                     .font(AppTheme.Parent.headlineFont.weight(.bold))
                     .foregroundStyle(AppTheme.Parent.success)
-            }
 
-            HStack {
                 statusBadge
-                Spacer()
+
                 if request.status == .pending {
-                    HStack(spacing: 12) {
-                        Button {
-                            onDecision?(.reject)
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(AppTheme.Parent.danger)
-                                .font(.system(size: 22))
-                        }
-                        Button {
-                            onDecision?(.approve)
-                        } label: {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(AppTheme.Parent.success)
-                                .font(.system(size: 22))
-                        }
-                    }
-                }
-            }
-            
-            if let method = request.paymentMethod {
-                HStack(spacing: 6) {
-                    Text("Payment:")
-                        .font(AppTheme.Parent.captionFont)
-                        .foregroundStyle(AppTheme.Parent.textSecondary)
-                    Text(methodLabel(method))
-                        .font(AppTheme.Parent.captionFont.weight(.semibold))
-                        .foregroundStyle(AppTheme.Parent.textPrimary)
-                    if let card = request.cardName {
-                        Text("• \(card)")
+                    VStack(spacing: 8) {
+                        Text("Needs Approval")
                             .font(AppTheme.Parent.captionFont)
                             .foregroundStyle(AppTheme.Parent.textSecondary)
+
+                        HStack(spacing: 8) {
+                            Button {
+                                onDecision?(.approve)
+                            } label: {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(AppTheme.Parent.success)
+                            }
+                            .buttonStyle(.plain)
+                            Button {
+                                onDecision?(.reject)
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(AppTheme.Parent.danger)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
+            .layoutPriority(1)
         }
-        .padding(12)
+        .padding(AppTheme.Parent.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
                 .fill(AppTheme.Parent.cardBackground.opacity(0.6))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: AppTheme.Parent.cornerRadius)
                         .stroke(AppTheme.Parent.textSecondary.opacity(0.1), lineWidth: 1)
                 )
         )
@@ -231,21 +213,17 @@ struct RequestRow: View {
     private var statusBadge: some View {
         Text(request.status.label)
             .font(AppTheme.Parent.captionFont.weight(.semibold))
-            .padding(.horizontal, 10)
+            .foregroundStyle(AppTheme.Parent.textPrimary)
+            .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
                 Capsule()
-                    .fill(colorForStatus.opacity(0.15))
+                    .fill(AppTheme.Parent.cardBackground)
+                    .overlay(
+                        Capsule()
+                            .stroke(AppTheme.Parent.textSecondary.opacity(0.3), lineWidth: 1)
+                    )
             )
-            .foregroundStyle(colorForStatus)
-    }
-
-    private var colorForStatus: Color {
-        switch request.status {
-        case .pending: return AppTheme.Parent.warning
-        case .approved: return AppTheme.Parent.success
-        case .rejected, .cancelled: return AppTheme.Parent.danger
-        }
     }
     
     private func methodLabel(_ raw: String) -> String {

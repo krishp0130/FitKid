@@ -146,9 +146,9 @@ struct ParentChoresView: View {
             case .reject:
                 try await appState.rejectChore(accessToken: token, choreId: chore.id)
             }
-            // Refresh chores list silently
+            // Refresh chores list so UI updates immediately
             await loadChores(showLoading: false)
-            // Notify dashboard to refresh
+            // Notify dashboard so pending list updates (same appState, but ensures dashboard refetches if needed)
             NotificationCenter.default.post(name: NSNotification.Name("ChoreUpdated"), object: nil)
         } catch {
             await MainActor.run {
@@ -180,7 +180,7 @@ struct ParentChoreCard: View {
                         .font(AppTheme.Parent.headlineFont)
                         .foregroundStyle(AppTheme.Parent.textPrimary)
                         .lineLimit(1)
-                    
+
                     if chore.isRecurring {
                         Text(chore.recurrenceLabel)
                             .font(AppTheme.Parent.captionFont)
@@ -237,48 +237,22 @@ struct ParentChoreCard: View {
                         Text("Needs Approval")
                             .font(AppTheme.Parent.captionFont)
                             .foregroundStyle(AppTheme.Parent.textSecondary)
-                        
+
                         HStack(spacing: 8) {
                             Button {
                                 onDecision?(.approve)
                             } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 16))
-                                    Text("Approve")
-                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(AppTheme.Parent.success)
-                                )
-                                .fixedSize(horizontal: true, vertical: false)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(AppTheme.Parent.success)
                             }
                             .buttonStyle(.plain)
                             Button {
                                 onDecision?(.reject)
                             } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 16))
-                                    Text("Reject")
-                                        .font(AppTheme.Parent.captionFont.weight(.semibold))
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(AppTheme.Parent.danger)
-                                )
-                                .fixedSize(horizontal: true, vertical: false)
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(AppTheme.Parent.danger)
                             }
                             .buttonStyle(.plain)
                         }
